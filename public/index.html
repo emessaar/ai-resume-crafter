@@ -480,7 +480,7 @@
                                 <label for="select-ai-provider">AI Provider</label>
                                 <select id="select-ai-provider" class="form-input">
                                     <option value="gemini">Google Gemini AI</option>
-                                    <option value="litellm">LiteLLM (Local / OpenAI Compatible)</option>
+                                    <option value="litellm">Other/Open API Compatible</option>
                                 </select>
                             </div>
 
@@ -495,15 +495,15 @@
                             <div class="form-group col-span-2 ai-config-section hidden" id="section-config-litellm">
                                 <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); width: 100%;">
                                     <div class="form-group">
-                                        <label for="litellm-base-url">LiteLLM Base URL</label>
+                                        <label for="litellm-base-url">API Base URL</label>
                                         <input type="text" id="litellm-base-url" placeholder="http://localhost:4000/v1" class="form-input">
                                     </div>
                                     <div class="form-group">
-                                        <label for="litellm-model-name">LiteLLM Model Name</label>
+                                        <label for="litellm-model-name">Model Name</label>
                                         <input type="text" id="litellm-model-name" placeholder="ollama/llama3" class="form-input">
                                     </div>
                                     <div class="form-group col-span-2" style="margin-top: 0.5rem;">
-                                        <label for="litellm-api-key">LiteLLM API Key (Optional)</label>
+                                        <label for="litellm-api-key">API Key (Optional)</label>
                                         <input type="password" id="litellm-api-key" placeholder="Bearer Token (if required)" class="form-input">
                                     </div>
                                 </div>

@@ -16,7 +16,7 @@ The application is built completely with vanilla front-end technologies (HTML, C
 *   **Inline ✨ AI Rewrite Modals**: Compare original and modified versions side-by-side. Instruct the LLM (e.g. *“Make this bullet point sound more result-oriented”*) to tailor summaries or bullet items to target job descriptions.
 *   **Hybrid Keyword Matcher**:
     *   *Regex Match*: Private local regex extraction scanning against an embedded vocabulary list.
-    *   *AI Match*: Semantic ATS scanning, compatibility scores, and 3 specific tailoring bullet recommendations powered client-side by Google Gemini or OpenAI/LiteLLM.
+    *   *AI Match*: Semantic ATS scanning, compatibility scores, and 3 specific tailoring bullet recommendations powered client-side by Google Gemini or OpenAI Compatible Endpoints (like LiteLLM, etc).
 *   **Google Drive Multipart Backups**: Google Identity Services integration with sandboxed `drive.file` scope. Automatically creates a `resumecrafter/` backup folder on Google Drive and uploads files as clean Markdown documents.
 *   **Print-Perfect PDF Outputs**: Custom `@media print` rules specifically styled for letter/A4 outputs, ensuring layout elements split pages neatly without orphan headings or split paragraphs.
 
@@ -28,7 +28,7 @@ The application is built completely with vanilla front-end technologies (HTML, C
 graph TD
     Browser[Web Browser client-side] --> |Local Writes| IndexedDB[(IndexedDB - Dexie.js)]
     Browser --> |Direct GET/POST| GeminiAPI[Google Gemini API]
-    Browser --> |Direct GET/POST| LiteLLM[LiteLLM / OpenAI Compatible Endpoint]
+    Browser --> |Direct GET/POST| OpenAI Compatible Endpoint
     Browser --> |Direct GET/POST| GoogleDrive[Google Drive API v3]
     Browser --> |URL Scraper Requests| PyServer[Python Scrape Server server.py]
     PyServer --> |HTTP Get| ExternalJobPage[Job Board URL / ATS URL]
@@ -62,14 +62,14 @@ To respect user privacy, ResumeCrafter has zero backend servers. All credentials
 3.  Click **Test Connection** to confirm connectivity.
 4.  Toggle the keyword analyzer tab in the drawer from *Regex Match* to *AI Match*.
 
-### 2. LiteLLM & Local AI Models (Ollama)
+### 2. Local AI Models (Ollama, LiteLLM, etc)
 You can direct AI requests to locally hosted LLMs or OpenAI compatibility proxies:
-1.  Go to the **Integrations** tab and set the provider to **LiteLLM**.
-2.  Enter the base URL (e.g., `http://localhost:4000/v1` for LiteLLM or `http://localhost:11434/v1` for Ollama).
-3.  Specify the target model name (e.g., `ollama/llama3` or `gpt-3.5-turbo`).
-4.  Provide the Bearer token if utilizing a authenticated endpoint.
+1.  Go to the **Integrations** tab and set the provider to **<Your Local LLM Provider, e.g. Ollama, LMStudio, etc >**.
+2.  Enter the base URL (e.g., `http://localhost:4000/v1` for LiteLLM or `http://localhost:11434/v1` for Ollama, or whatever port they are hosted on).
+3.  Specify the target model name (e.g., `gemma4` or `gpt-3.5-turbo`).
+4.  Provide the Bearer token if utilizing an authenticated endpoint.
 
-### 3. Google Drive Sync Setup
+### 3. Google Drive Sync Setup (Optional)
 ResumeCrafter includes a default Google OAuth Client ID pre-configured for `http://localhost:8000` environments. 
 
 If hosting ResumeCrafter on your own domain or staging server:

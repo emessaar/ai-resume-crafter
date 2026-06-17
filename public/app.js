@@ -1442,7 +1442,7 @@ async function triggerKeywordAnalysis() {
             return;
         }
         if (aiProvider === 'litellm' && !litellmBaseUrl) {
-            runLocalFallback(job, "Configure your LiteLLM Base URL in the Integrations tab to enable AI analysis.");
+            runLocalFallback(job, "Configure your API Base URL in the Integrations tab to enable AI analysis.");
             return;
         }
 
@@ -1451,7 +1451,7 @@ async function triggerKeywordAnalysis() {
         DOM.aiSuggestionsContainer.classList.remove('hidden');
         DOM.aiSuggestionsList.innerHTML = `
             <div class="ai-suggestion-card" style="border-left-color: var(--color-warning) !important; text-align:center;">
-                <p><i data-lucide="loader" class="spinner"></i> Fetching AI analysis (${aiProvider === 'gemini' ? 'Gemini' : 'LiteLLM'})...</p>
+                <p><i data-lucide="loader" class="spinner"></i> Fetching AI analysis (${aiProvider === 'gemini' ? 'Gemini' : 'OpenAI Compatible'})...</p>
             </div>
         `;
         lucide.createIcons();
@@ -1826,7 +1826,7 @@ async function setupGeminiApi() {
                 return;
             }
             if (aiProvider === 'litellm' && !litellmBaseUrl) {
-                alert('Please input your LiteLLM Base URL in the Integrations tab.');
+                alert('Please input your API Base URL in the Integrations tab.');
                 document.getElementById('nav-btn-gdrive').click();
                 DOM.inputLitellmBaseUrl.focus();
                 return;
@@ -2003,7 +2003,7 @@ function openRewriteModal(textareaElement) {
         return;
     }
     if (aiProvider === 'litellm' && !litellmBaseUrl) {
-        alert('Please configure your LiteLLM Base URL in the Integrations tab first.');
+        alert('Please configure your API Base URL in the Integrations tab first.');
         document.getElementById('nav-btn-gdrive').click();
         DOM.inputLitellmBaseUrl.focus();
         return;
@@ -2017,7 +2017,7 @@ function openRewriteModal(textareaElement) {
     document.getElementById('btn-apply-rewrite').disabled = true;
     
     const modelDisplay = aiProvider === 'litellm' ? litellmModelName : 'gemini-1.5-flash';
-    document.getElementById('ai-rewrite-status').innerHTML = `Optimizing segment using <strong>${aiProvider === 'gemini' ? 'Gemini AI' : 'LiteLLM'}</strong> (${modelDisplay})`;
+    document.getElementById('ai-rewrite-status').innerHTML = `Optimizing segment using <strong>${aiProvider === 'gemini' ? 'Gemini AI' : 'OpenAI Compatible'}</strong> (${modelDisplay})`;
     
     document.getElementById('ai-rewrite-modal').style.display = 'flex';
     document.getElementById('ai-rewrite-instructions').focus();
