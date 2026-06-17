@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume: ResumeCrafter</title>
+    <meta name="description" content="Build, track, tailor, and sync professional resumes to Google Drive. Integrated with live job description analysis.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="index.css">
+    <!-- Scripts (Lucide Icons & Marked MD parser) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Google GIS API -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <div id="app-root">
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="sidebar" id="app-sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-logo">
+                    <i data-lucide="sparkles" class="brand-icon"></i>
+                </div>
+                <h1 class="brand-title">Resume<span>Crafter</span></h1>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" id="nav-btn-master" data-tab="tab-master">
+                    <i data-lucide="user"></i>
+                    <span>Master Resume</span>
+                </button>
+                <button class="nav-btn" id="nav-btn-jobs" data-tab="tab-jobs">
+                    <i data-lucide="briefcase"></i>
+                    <span>Job Tracker</span>
+                </button>
+                <button class="nav-btn" id="nav-btn-templates" data-tab="tab-templates">
+                    <i data-lucide="palette"></i>
+                    <span>Templates</span>
+                </button>
+                <button class="nav-btn" id="nav-btn-gdrive" data-tab="tab-gdrive">
+                    <i data-lucide="cloud-lightning"></i>
+                    <span>Integrations</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="connection-status offline" id="gdrive-status-badge" style="margin-bottom: 0.75rem;">
+                    <i data-lucide="cloud" style="width: 14px; height: 14px; flex-shrink: 0; opacity: 0.85;"></i>
+                    <span class="status-dot"></span>
+                    <span class="status-text">Drive Disconnected</span>
+                </div>
+                <button class="nav-btn" id="btn-collapse-sidebar" style="width: 100%; border: 1px solid var(--ui-border-color); background: rgba(255,255,255,0.02); display: flex; align-items: center; gap: 0.75rem;" title="Collapse Sidebar">
+                    <i data-lucide="chevron-left" id="icon-collapse-sidebar"></i>
+                    <span>Collapse</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT WORKSPACE -->
+        <main class="workspace" id="app-workspace">
+            
+            <!-- VIEW 1: MASTER RESUME EDITOR -->
+            <section class="workspace-tab active" id="tab-master">
+                <header class="tab-header">
+                    <h2>Master Resume Profile</h2>
+                    <p>Build your primary resume context. This functions as the base dataset for all tailored jobs.</p>
+                </header>
+                
+                <div class="tab-body">
+                    <!-- PERSONAL INFO -->
+                    <div class="editor-section accordion expanded" id="sec-personal">
+                        <button class="accordion-trigger" id="btn-accordion-personal">
+                            <span class="accordion-title"><i data-lucide="contact"></i> Personal Details</span>
+                            <i data-lucide="chevron-down" class="accordion-arrow"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="form-grid">
+                                <div class="form-group col-span-2">
+                                    <label for="input-full-name">Full Name</label>
+                                    <input type="text" id="input-full-name" placeholder="John Doe" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-email">Email Address</label>
+                                    <input type="email" id="input-email" placeholder="john.doe@example.com" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-phone">Phone Number</label>
+                                    <input type="tel" id="input-phone" placeholder="+1 (555) 123-4567" class="form-input">
+                                </div>
+                                <div class="form-group col-span-2">
+                                    <label for="input-location">Location</label>
+                                    <input type="text" id="input-location" placeholder="San Francisco, CA" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-website">Personal Website / Portfolio</label>
+                                    <input type="url" id="input-website" placeholder="https://johndoe.dev" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-linkedin">LinkedIn Profile</label>
+                                    <input type="url" id="input-linkedin" placeholder="https://linkedin.com/in/johndoe" class="form-input">
+                                </div>
+                                <div class="form-group col-span-2">
+                                    <label for="input-github">GitHub Profile</label>
+                                    <input type="url" id="input-github" placeholder="https://github.com/johndoe" class="form-input">
+                                </div>
+                                <div class="form-group col-span-2">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.25rem;">
+                                        <label for="input-summary" style="margin-bottom:0;">Professional Summary</label>
+                                        <button type="button" class="btn btn-secondary btn-sm" id="btn-ai-rewrite-summary" style="padding:2px 8px; font-size:0.75rem; display:flex; align-items:center; gap:2px;" title="Improve Summary with AI">
+                                            <i data-lucide="sparkles" style="width:10px;height:10px;"></i> AI Rewrite
+                                        </button>
+                                    </div>
+                                    <textarea id="input-summary" placeholder="Experienced Software Engineer specialized in web applications..." rows="4" class="form-textarea"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- WORK EXPERIENCE -->
+                    <div class="editor-section accordion" id="sec-experience">
+                        <button class="accordion-trigger" id="btn-accordion-experience">
+                            <span class="accordion-title"><i data-lucide="history"></i> Professional Experience</span>
+                            <i data-lucide="chevron-down" class="accordion-arrow"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="repeater-list" id="experience-list">
+                                <!-- Experience cards injected here -->
+                            </div>
+                            <button class="btn btn-secondary btn-icon" id="btn-add-experience">
+                                <i data-lucide="plus"></i> Add Experience
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- EDUCATION -->
+                    <div class="editor-section accordion" id="sec-education">
+                        <button class="accordion-trigger" id="btn-accordion-education">
+                            <span class="accordion-title"><i data-lucide="graduation-cap"></i> Education</span>
+                            <i data-lucide="chevron-down" class="accordion-arrow"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="repeater-list" id="education-list">
+                                <!-- Education cards injected here -->
+                            </div>
+                            <button class="btn btn-secondary btn-icon" id="btn-add-education">
+                                <i data-lucide="plus"></i> Add Education
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SKILLS -->
+                    <div class="editor-section accordion" id="sec-skills">
+                        <button class="accordion-trigger" id="btn-accordion-skills">
+                            <span class="accordion-title"><i data-lucide="cpu"></i> Skills & Expertise</span>
+                            <i data-lucide="chevron-down" class="accordion-arrow"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="skills-input-wrapper">
+                                <p class="help-text">Type a skill and press Enter or click Add.</p>
+                                <div class="input-inline">
+                                    <input type="text" id="input-new-skill" placeholder="e.g. React, Python, Project Management" class="form-input">
+                                    <button class="btn btn-primary" id="btn-add-skill">Add</button>
+                                </div>
+                                <div class="skills-tag-container" id="skills-tags">
+                                    <!-- Skill tags injected here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PROJECTS -->
+                    <div class="editor-section accordion" id="sec-projects">
+                        <button class="accordion-trigger" id="btn-accordion-projects">
+                            <span class="accordion-title"><i data-lucide="folder-git"></i> Key Projects</span>
+                            <i data-lucide="chevron-down" class="accordion-arrow"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="repeater-list" id="projects-list">
+                                <!-- Project cards injected here -->
+                            </div>
+                            <button class="btn btn-secondary btn-icon" id="btn-add-project">
+                                <i data-lucide="plus"></i> Add Project
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- CERTIFICATIONS -->
+                    <div class="editor-section accordion" id="sec-certifications">
+                        <button class="accordion-trigger" id="btn-accordion-certifications">
+                            <span class="accordion-title"><i data-lucide="award"></i> Certifications</span>
+                            <i data-lucide="chevron-down" class="accordion-arrow"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="skills-input-wrapper">
+                                <p class="help-text">Type a certification and press Enter.</p>
+                                <div class="input-inline">
+                                    <input type="text" id="input-new-cert" placeholder="e.g. AWS Solutions Architect, PMP" class="form-input">
+                                    <button class="btn btn-primary" id="btn-add-cert">Add</button>
+                                </div>
+                                <div class="skills-tag-container" id="cert-tags">
+                                    <!-- Certifications tags injected here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 2: JOB TRACKER -->
+            <section class="workspace-tab" id="tab-jobs">
+                <header class="tab-header">
+                    <h2>Job Applications & Resumes</h2>
+                    <p>Track target positions, import job descriptions, and tailor specific resume editions to fit.</p>
+                </header>
+                
+                <div class="tab-body">
+                    <div class="jobs-layout">
+                        <!-- JOB TRACKER PANEL -->
+                        <div class="jobs-list-panel">
+                            <div class="panel-section-header">
+                                <h3>Target Roles</h3>
+                                <button class="btn btn-primary btn-sm btn-icon" id="btn-new-job">
+                                    <i data-lucide="plus"></i> Add Job
+                                </button>
+                            </div>
+                            <div class="jobs-list-cards" id="jobs-container">
+                                <!-- Job cards will load here -->
+                            </div>
+                        </div>
+
+                        <!-- ACTIVE JOB DETAIL / EDITOR -->
+                        <div class="job-detail-panel empty-state" id="active-job-detail">
+                            <div class="empty-state-content" id="job-detail-empty">
+                                <i data-lucide="briefcase-medical" class="empty-icon"></i>
+                                <h4>No Job Selected</h4>
+                                <p>Select an existing job role from the list or click "Add Job" to start tailoring a new resume version.</p>
+                            </div>
+
+                            <div class="job-detail-content hidden" id="job-detail-editor">
+                                <div class="job-detail-header-actions">
+                                    <button class="btn btn-danger btn-sm btn-icon" id="btn-delete-job">
+                                        <i data-lucide="trash-2"></i> Delete Job
+                                    </button>
+                                </div>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="job-input-title">Job Title</label>
+                                        <input type="text" id="job-input-title" placeholder="Senior Frontend Developer" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="job-input-company">Company</label>
+                                        <input type="text" id="job-input-company" placeholder="Acme Inc." class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="job-input-status">Application Status</label>
+                                        <select id="job-input-status" class="form-input">
+                                            <option value="Draft">Draft</option>
+                                            <option value="Applied">Applied</option>
+                                            <option value="Interviewing">Interviewing</option>
+                                            <option value="Offered">Offered</option>
+                                            <option value="Rejected">Rejected</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="job-input-url">Job Posting URL</label>
+                                        <div class="input-inline">
+                                            <input type="text" id="job-input-url" placeholder="https://careers.company.com/job..." class="form-input">
+                                            <button class="btn btn-secondary" id="btn-scrape-jd">Scrape</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-span-2">
+                                        <label for="job-input-text">Job Description Content</label>
+                                        <textarea id="job-input-text" placeholder="Paste full Job Description here..." rows="8" class="form-textarea"></textarea>
+                                    </div>
+                                    
+                                    <div class="tailor-actions col-span-2">
+                                        <div class="divider"></div>
+                                        <div class="tailor-banner">
+                                            <div class="tailor-banner-info">
+                                                <h5>Tailored Version Control</h5>
+                                                <p>Create a dedicated resume snapshot customized for this position.</p>
+                                            </div>
+                                            <div class="tailor-buttons">
+                                                <button class="btn btn-accent btn-sm" id="btn-generate-tailored">
+                                                    <i data-lucide="file-signature"></i> Customize Resume for Job
+                                                </button>
+                                                <button class="btn btn-secondary btn-sm hidden" id="btn-edit-tailored">
+                                                    <i data-lucide="edit-3"></i> Edit Customized Resume
+                                                </button>
+                                                <button class="btn btn-primary btn-sm hidden" id="btn-reset-tailored">
+                                                    <i data-lucide="rotate-ccw"></i> Reset to Master
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group col-span-2">
+                                        <label for="job-input-notes">Notes</label>
+                                        <textarea id="job-input-notes" placeholder="Contact person, interview dates, follow-up log..." rows="3" class="form-textarea"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 3: TEMPLATE STYLE DESIGNER -->
+            <section class="workspace-tab" id="tab-templates">
+                <header class="tab-header">
+                    <h2>Resume Templates & Styling</h2>
+                    <p>Modify design settings, select a layout, and customize fonts and colors across templates.</p>
+                </header>
+                
+                <div class="tab-body">
+                    <div class="template-designer-layout">
+                        <div class="style-controls-card">
+                            <h3>Layout & Design System</h3>
+                            
+                            <div class="control-group">
+                                <label for="select-layout-template">Active Template</label>
+                                <select id="select-layout-template" class="form-input">
+                                    <option value="modern">Modern Professional</option>
+                                    <option value="minimal">Minimalist Elegance</option>
+                                    <option value="split">Split Columns (Left Bar)</option>
+                                </select>
+                            </div>
+
+                            <div class="divider"></div>
+                            
+                            <h4>Typography & Margins</h4>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="input-style-font">Font Family</label>
+                                    <select id="input-style-font" class="form-input">
+                                        <option value="Inter, sans-serif">Inter</option>
+                                        <option value="'Outfit', sans-serif">Outfit</option>
+                                        <option value="'Georgia', serif">Georgia</option>
+                                        <option value="system-ui, sans-serif">System UI</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-style-fontsize">Font Size</label>
+                                    <select id="input-style-fontsize" class="form-input">
+                                        <option value="10pt">10pt (Compact)</option>
+                                        <option value="11pt">11pt (Recommended)</option>
+                                        <option value="12pt">12pt (Comfortable)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-style-lineheight">Line Height</label>
+                                    <select id="input-style-lineheight" class="form-input">
+                                        <option value="1.2">1.2 (Tight)</option>
+                                        <option value="1.4">1.4 (Standard)</option>
+                                        <option value="1.5">1.5 (Loose)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-style-margin">Margins</label>
+                                    <select id="input-style-margin" class="form-input">
+                                        <option value="0.5in">0.5 in (Narrow)</option>
+                                        <option value="0.75in">0.75 in (Balanced)</option>
+                                        <option value="1.0in">1.0 in (Wide)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="divider"></div>
+                            
+                            <h4>Color Palette</h4>
+                            <div class="color-pickers-grid">
+                                <div class="color-picker-item">
+                                    <label for="color-style-primary">Primary Accent</label>
+                                    <div class="color-input-wrapper">
+                                        <input type="color" id="color-style-primary" value="#4f46e5" class="color-input">
+                                        <input type="text" id="color-text-primary" value="#4f46e5" class="color-text">
+                                    </div>
+                                </div>
+                                <div class="color-picker-item">
+                                    <label for="color-style-text">Text Color</label>
+                                    <div class="color-input-wrapper">
+                                        <input type="color" id="color-style-text" value="#1f2937" class="color-input">
+                                        <input type="text" id="color-text-text" value="#1f2937" class="color-text">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="divider"></div>
+                            
+                            <h4>Section Order</h4>
+                            <p class="help-text">Drag and drop sections to rearrange order (Coming soon - standard ordering: Summary &rarr; Experience &rarr; Projects &rarr; Education &rarr; Skills)</p>
+                            <div class="section-order-list" id="section-order-container">
+                                <!-- List of sections with sorting handles -->
+                                <div class="section-order-item" data-section="summary">
+                                    <i data-lucide="grip-vertical" class="grip-handle"></i>
+                                    <span>Summary Block</span>
+                                </div>
+                                <div class="section-order-item" data-section="experience">
+                                    <i data-lucide="grip-vertical" class="grip-handle"></i>
+                                    <span>Professional Experience</span>
+                                </div>
+                                <div class="section-order-item" data-section="education">
+                                    <i data-lucide="grip-vertical" class="grip-handle"></i>
+                                    <span>Education Background</span>
+                                </div>
+                                <div class="section-order-item" data-section="skills">
+                                    <i data-lucide="grip-vertical" class="grip-handle"></i>
+                                    <span>Skills & Tech Stack</span>
+                                </div>
+                                <div class="section-order-item" data-section="projects">
+                                    <i data-lucide="grip-vertical" class="grip-handle"></i>
+                                    <span>Projects Portfolio</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 4: GOOGLE DRIVE & LLM SETTINGS -->
+            <section class="workspace-tab" id="tab-gdrive">
+                <header class="tab-header">
+                    <h2>Integrations & API Settings</h2>
+                    <p>Configure Google Drive cloud backups and add Gemini API keys to unlock AI features.</p>
+                </header>
+                
+                <div class="tab-body">
+                    <!-- GDRIVE SETTINGS -->
+                    <div class="gdrive-settings-card">
+                        <div class="gdrive-status-header">
+                            <i data-lucide="cloud" class="cloud-hero-icon disconnected" id="cloud-icon-state"></i>
+                            <div>
+                                <h3 id="gdrive-connection-heading">Drive Account Access</h3>
+                                <p id="gdrive-connection-desc">Integrate directly with Google Drive using a client-side OAuth flow.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="divider"></div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group col-span-2">
+                                <label for="gdrive-client-id">Google Client ID</label>
+                                <input type="text" id="gdrive-client-id" placeholder="Enter your Google Developer Client ID" class="form-input">
+                                <p class="help-text">Don't have a Client ID? Enter your Google Cloud console token here, or follow <a href="https://developers.google.com/drive/api/quickstart/js" target="_blank">Google's API Guide</a> to generate one.</p>
+                                <p class="help-text" style="margin-top: 0.5rem; color: #10b981; display: flex; align-items: center; gap: 4px;">
+                                    <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+                                    <span><strong>Privacy & Security:</strong> Access is restricted strictly to a dedicated <code>resumecrafter</code> folder using Google's sandboxed <code>drive.file</code> scope. The app cannot view or modify any other files on your Google Drive.</span>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="sync-actions">
+                            <button class="btn btn-primary btn-icon" id="btn-gdrive-login">
+                                <i data-lucide="log-in"></i> Link Google Drive Account
+                            </button>
+                            <button class="btn btn-secondary btn-icon hidden" id="btn-gdrive-logout">
+                                <i data-lucide="log-out"></i> Log Out / Unlink
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- LLM AI SETTINGS -->
+                    <div class="gdrive-settings-card" style="margin-top: 1rem;">
+                        <div class="gdrive-status-header">
+                            <i data-lucide="bot" class="cloud-hero-icon connected" style="background-color: var(--ui-accent-soft); color: var(--color-purple);"></i>
+                            <div>
+                                <h3>AI Matcher Settings</h3>
+                                <p>Configure your choice of LLM provider to enable AI semantic keyword matches and bullet suggestions.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="divider"></div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group col-span-2">
+                                <label for="select-ai-provider">AI Provider</label>
+                                <select id="select-ai-provider" class="form-input">
+                                    <option value="gemini">Google Gemini AI</option>
+                                    <option value="litellm">LiteLLM (Local / OpenAI Compatible)</option>
+                                </select>
+                            </div>
+
+                            <!-- GEMINI CONFIGS -->
+                            <div class="form-group col-span-2 ai-config-section" id="section-config-gemini">
+                                <label for="gemini-api-key">Gemini API Key</label>
+                                <input type="password" id="gemini-api-key" placeholder="Enter your AIzaSy... API Key" class="form-input">
+                                <p class="help-text">Your API Key is stored locally and sent directly to Google's endpoints. Get a key from <a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a>.</p>
+                            </div>
+
+                            <!-- LITELLM CONFIGS -->
+                            <div class="form-group col-span-2 ai-config-section hidden" id="section-config-litellm">
+                                <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); width: 100%;">
+                                    <div class="form-group">
+                                        <label for="litellm-base-url">LiteLLM Base URL</label>
+                                        <input type="text" id="litellm-base-url" placeholder="http://localhost:4000/v1" class="form-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="litellm-model-name">LiteLLM Model Name</label>
+                                        <input type="text" id="litellm-model-name" placeholder="ollama/llama3" class="form-input">
+                                    </div>
+                                    <div class="form-group col-span-2" style="margin-top: 0.5rem;">
+                                        <label for="litellm-api-key">LiteLLM API Key (Optional)</label>
+                                        <input type="password" id="litellm-api-key" placeholder="Bearer Token (if required)" class="form-input">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="divider"></div>
+                        
+                        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                            <button class="btn btn-secondary btn-icon" id="btn-test-llm">
+                                <i data-lucide="activity"></i> Test AI Connection
+                            </button>
+                            <span id="llm-test-result" style="font-size: 0.85rem; font-weight: 500; display: none;"></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- RESIZER DRAG HANDLE -->
+        <div class="resizer" id="workspace-preview-resizer" title="Drag to resize panes"></div>
+
+        <!-- LIVE PREVIEW & OVERLAY PANEL -->
+        <section class="preview-panel" id="app-preview">
+            <header class="preview-toolbar">
+                <div class="toolbar-title">
+                    <i data-lucide="eye"></i>
+                    <h3>Interactive Preview</h3>
+                </div>
+                
+                <div class="toolbar-actions">
+                    <!-- Export Actions -->
+                    <button class="btn btn-icon btn-sm" id="btn-export-pdf" title="Export as PDF">
+                        <i data-lucide="file-text"></i>
+                        <span>PDF</span>
+                    </button>
+                    <button class="btn btn-icon btn-sm" id="btn-export-md" title="Export as Markdown">
+                        <i data-lucide="file-code"></i>
+                        <span>MD</span>
+                    </button>
+                    <button class="btn btn-icon btn-sm" id="btn-export-json" title="Export as JSON Resume">
+                        <i data-lucide="braces"></i>
+                        <span>JSON</span>
+                    </button>
+                    <button class="btn btn-accent btn-sm btn-icon" id="btn-sync-gdrive" title="Upload to Google Drive">
+                        <i data-lucide="cloud-upload"></i>
+                        <span>Sync Drive</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="preview-workspace">
+                <!-- PREVIEW CANVAS SHEET -->
+                <div class="resume-sheet-container" id="sheet-viewport">
+                    <div class="resume-sheet" id="resume-preview-sheet">
+                        <!-- Dynamic Resume Template compiled content -->
+                    </div>
+                </div>
+                
+                <!-- KEYWORD OVERLAY DRAWER -->
+                <div class="keyword-drawer" id="keyword-panel">
+                    <div class="drawer-header" id="btn-toggle-drawer">
+                        <span class="drawer-title"><i data-lucide="binary"></i> JD Keyword Optimizer</span>
+                        <div class="score-badge" id="jd-score-badge">0% Match</div>
+                    </div>
+                    <div class="drawer-content" id="drawer-scroll-content">
+                        <!-- Mode Selector Toggle -->
+                        <div class="matcher-mode-selector" style="display: flex; gap: 0.5rem; background-color: rgba(255,255,255,0.03); padding: 0.35rem; border-radius: 8px; margin-bottom: 0.25rem; border: 1px solid var(--ui-border-color);">
+                            <button class="btn btn-sm mode-select-btn active" id="btn-mode-local" style="flex: 1; padding: 0.35rem; font-size: 0.75rem; border-radius: 6px; font-weight:600; cursor:pointer;" data-mode="local">Regex Match</button>
+                            <button class="btn btn-sm mode-select-btn" id="btn-mode-llm" style="flex: 1; padding: 0.35rem; font-size: 0.75rem; border-radius: 6px; font-weight:600; cursor:pointer;" data-mode="llm">AI Match</button>
+                        </div>
+                        <div id="ai-model-badge" style="font-size: 0.7rem; color: var(--ui-text-muted); text-align: right; margin-bottom: 0.75rem; padding-right: 0.25rem; font-style: italic; display: none;"></div>
+
+                        <p class="help-text">This panel scans the active job description requirements and compares it with your resume skills and experiences.</p>
+                        
+                        <div class="keyword-stats">
+                            <div class="stat-card">
+                                <span class="stat-num" id="stat-matches">0</span>
+                                <span class="stat-lbl">Matched</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-num" id="stat-missing">0</span>
+                                <span class="stat-lbl">Missing</span>
+                            </div>
+                        </div>
+
+                        <div class="keyword-groups">
+                            <h5>Matching Keywords</h5>
+                            <div class="tag-group" id="tags-matched">
+                                <!-- Tags injected -->
+                            </div>
+
+                            <h5 style="margin-top: 1.25rem;">Missing / Recommended Keywords</h5>
+                            <div class="tag-group" id="tags-missing">
+                                <!-- Tags injected -->
+                            </div>
+                        </div>
+
+                        <!-- AI Suggestions Injected here -->
+                        <div class="ai-suggestions-group hidden" id="ai-suggestions-container" style="margin-top: 1.25rem; border-top: 1px solid var(--ui-border-color); padding-top: 1.25rem;">
+                            <h5 style="display:flex; align-items:center; gap:0.35rem; font-family:'Outfit',sans-serif; font-size:0.85rem; font-weight:600; color:var(--ui-text-title); text-transform:uppercase; margin-bottom:0.75rem;"><i data-lucide="sparkles" style="width:14px;height:14px;color:var(--color-purple);"></i> AI Recommendations</h5>
+                            <div class="ai-suggestions-list" id="ai-suggestions-list" style="display:flex; flex-direction:column; gap:0.50rem;">
+                                <!-- AI Suggestions cards -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- AI REWRITE MODAL -->
+    <div id="ai-rewrite-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i data-lucide="sparkles" style="color: var(--color-purple); width: 18px; height: 18px;"></i> AI Rewrite Assistant</h3>
+                <button type="button" class="modal-close-btn" id="btn-close-rewrite-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="help-text" id="ai-rewrite-status" style="margin-bottom: 0.75rem;"></p>
+                
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="ai-rewrite-instructions">Prompt / Instructions (Optional)</label>
+                    <input type="text" id="ai-rewrite-instructions" placeholder="e.g., 'Make it punchier', 'Align with Docker experience', 'Use active verbs'" class="form-input" style="width: 100%;">
+                </div>
+
+                <div style="display: flex; gap: 1rem; height: 200px; margin-bottom: 1.25rem;">
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--ui-text-muted); margin-bottom: 0.25rem;">Before</span>
+                        <textarea id="ai-rewrite-before" class="form-textarea" readonly style="flex: 1; resize: none; background: rgba(255,255,255,0.02); color: var(--ui-text-muted); font-size: 0.85rem; padding: 0.5rem; border: 1px solid var(--ui-border-color); border-radius: var(--border-radius);"></textarea>
+                    </div>
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--ui-text-title); margin-bottom: 0.25rem; display: flex; justify-content: space-between;">
+                            <span>After</span>
+                            <span id="ai-rewrite-spinner" style="display: none; color: var(--color-purple); font-size: 0.75rem;"><i data-lucide="loader" class="spinner" style="width:12px;height:12px;vertical-align:middle;margin-right:2px;"></i> Rewriting...</span>
+                        </span>
+                        <textarea id="ai-rewrite-after" class="form-textarea" style="flex: 1; resize: none; font-size: 0.85rem; padding: 0.5rem; background: rgba(255,255,255,0.04); border: 1px solid var(--ui-border-color); border-radius: var(--border-radius);"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btn-cancel-rewrite">Cancel</button>
+                <button class="btn btn-primary" id="btn-execute-rewrite" style="margin-left: 0.5rem;"><i data-lucide="sparkles"></i> Rewrite</button>
+                <button class="btn btn-accent" id="btn-apply-rewrite" disabled style="margin-left: auto;">Accept & Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTROLLER SCRIPT -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
