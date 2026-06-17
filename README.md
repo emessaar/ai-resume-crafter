@@ -28,7 +28,7 @@ The application is built completely with vanilla front-end technologies (HTML, C
 graph TD
     Browser[Web Browser client-side] --> |Local Writes| IndexedDB[(IndexedDB - Dexie.js)]
     Browser --> |Direct GET/POST| GeminiAPI[Google Gemini API]
-    Browser --> |Direct GET/POST| OpenAI Compatible Endpoint
+    Browser --> |Direct GET/POST| OpenAICompatibleEndpoint[OpenAI Compatible Endpoint]
     Browser --> |Direct GET/POST| GoogleDrive[Google Drive API v3]
     Browser --> |URL Scraper Requests| PyServer[Python Scrape Server server.py]
     PyServer --> |HTTP Get| ExternalJobPage[Job Board URL / ATS URL]
