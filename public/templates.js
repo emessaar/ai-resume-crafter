@@ -9,9 +9,9 @@ export const BUILTIN_TEMPLATES = {
         cssClass: 'template-modern',
         layout: 'single-column',
         defaults: {
-            primaryColor: '#1e293b',
-            secondaryColor: '#4f46e5',
-            textColor: '#334155',
+            primaryColor: '#111827',
+            secondaryColor: '#374151',
+            textColor: '#4b5563',
             backgroundColor: '#ffffff',
             fontFamily: 'Inter, sans-serif',
             fontSize: '11pt',
@@ -25,9 +25,9 @@ export const BUILTIN_TEMPLATES = {
         cssClass: 'template-minimal',
         layout: 'single-column',
         defaults: {
-            primaryColor: '#0f172a',
-            secondaryColor: '#2563eb',
-            textColor: '#334155',
+            primaryColor: '#1f2937',
+            secondaryColor: '#4b5563',
+            textColor: '#525252',
             backgroundColor: '#ffffff',
             fontFamily: 'system-ui, sans-serif',
             fontSize: '10.5pt',
@@ -41,9 +41,9 @@ export const BUILTIN_TEMPLATES = {
         cssClass: 'template-split',
         layout: 'split',
         defaults: {
-            primaryColor: '#0f172a',
-            secondaryColor: '#6366f1',
-            textColor: '#334155',
+            primaryColor: '#111827',
+            secondaryColor: '#374151',
+            textColor: '#4b5563',
             backgroundColor: '#ffffff',
             fontFamily: "'Outfit', sans-serif",
             fontSize: '11pt',
@@ -58,9 +58,9 @@ export const BUILTIN_TEMPLATES = {
  */
 export function applyStyleVariables(element, styles) {
     if (!element) return;
-    element.style.setProperty('--preview-primary-color', styles.primaryColor || '#1e293b');
-    element.style.setProperty('--preview-secondary-color', styles.secondaryColor || '#4f46e5');
-    element.style.setProperty('--preview-text-color', styles.textColor || '#334155');
+    element.style.setProperty('--preview-primary-color', styles.primaryColor || '#111827');
+    element.style.setProperty('--preview-secondary-color', styles.secondaryColor || '#374151');
+    element.style.setProperty('--preview-text-color', styles.textColor || '#4b5563');
     element.style.setProperty('--preview-bg-color', styles.backgroundColor || '#ffffff');
     element.style.setProperty('--preview-font-family', styles.fontFamily || 'Inter, sans-serif');
     element.style.setProperty('--preview-font-size', styles.fontSize || '11pt');
@@ -99,6 +99,10 @@ export function compileResumeHtml(resumeData, templateId, sectionOrder = ['summa
                 ${personalInfo.linkedin ? `<span><i data-lucide="linkedin" style="width:12px;height:12px;"></i> <a href="${personalInfo.linkedin}" target="_blank">LinkedIn</a></span>` : ''}
                 ${personalInfo.github ? `<span><i data-lucide="github" style="width:12px;height:12px;"></i> <a href="${personalInfo.github}" target="_blank">GitHub</a></span>` : ''}
             </div>
+            ${personalInfo.customSubline ? `
+            <div class="resume-preview-custom-subline" style="margin-top: 0.5rem; font-size: 9.5pt; text-align: center; color: var(--preview-text-color); font-weight: 500;">
+                ${personalInfo.customSubline}
+            </div>` : ''}
         </div>
     `;
 
@@ -181,7 +185,7 @@ export function compileResumeHtml(resumeData, templateId, sectionOrder = ['summa
                                 </div>
                                 <div class="resume-preview-item-desc">
                                     ${window.marked ? window.marked.parse(proj.description || '') : proj.description}
-                                    ${proj.technologies && proj.technologies.length > 0 ? `<div style="margin-top:0.25rem;font-size:9pt;color:#475569;"><strong>Tech Stack:</strong> ${proj.technologies.join(', ')}</div>` : ''}
+                                    ${proj.technologies && proj.technologies.length > 0 ? `<div style="margin-top:0.25rem;font-size:9pt;color:#555555;"><strong>Tech Stack:</strong> ${proj.technologies.join(', ')}</div>` : ''}
                                 </div>
                             </div>
                         `).join('')}
@@ -231,6 +235,10 @@ export function compileResumeHtml(resumeData, templateId, sectionOrder = ['summa
                         ${personalInfo.linkedin ? `<span><i data-lucide="linkedin" style="width:10px;height:10px;"></i> <a href="${personalInfo.linkedin}" target="_blank">LinkedIn</a></span>` : ''}
                         ${personalInfo.github ? `<span><i data-lucide="github" style="width:10px;height:10px;"></i> <a href="${personalInfo.github}" target="_blank">GitHub</a></span>` : ''}
                     </div>
+                    ${personalInfo.customSubline ? `
+                    <div class="resume-preview-custom-subline" style="margin-top: 0.5rem; font-size: 8.5pt; color: var(--preview-text-color); font-weight: 500; text-align: left;">
+                        ${personalInfo.customSubline}
+                    </div>` : ''}
                 </div>
                 ${leftColContent}
             </div>
@@ -268,43 +276,68 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
         }
     };
 
-    const primaryColor = styles.primaryColor || '#1e293b';
-    const secondaryColor = styles.secondaryColor || '#4f46e5';
-    const textColor = styles.textColor || '#334155';
+    const primaryColor = styles.primaryColor || '#111827';
+    const secondaryColor = styles.secondaryColor || '#374151';
+    const textColor = styles.textColor || '#4b5563';
     const backgroundColor = styles.backgroundColor || '#ffffff';
     const fontFamily = styles.fontFamily || 'Inter, sans-serif';
     const fontSize = styles.fontSize || '11pt';
     const lineHeight = styles.lineHeight || '1.4';
-    const margins = styles.margins || '0.75in';
 
     // Simple markdown compiler fallback if marked is not available
     const parseMarkdown = (text) => {
         if (!text) return '';
+        let parsed = '';
         if (window.marked && window.marked.parse) {
-            return window.marked.parse(text);
+            parsed = window.marked.parse(text);
+        } else {
+            // Basic fallback replacements for bold, italic, and lists
+            parsed = text
+                .replace(/\*\*(.*?)\*\//g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\r?\n/g, '<br>');
         }
-        // Basic fallback replacements for bold, italic, and lists
-        let html = text
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/\r?\n/g, '<br>');
-        return html;
+        
+        // Wrap any generated list items and paragraphs in inline styled span tags for Google Docs style preservation
+        return parsed
+            .replace(/<ul>/g, `<ul style="margin: 0 0 0.5rem 0; padding-left: 20px; font-family: ${fontFamily}; font-size: 10pt; color: ${textColor};">`)
+            .replace(/<\/ul>/g, `</ul>`)
+            .replace(/<ol>/g, `<ol style="margin: 0 0 0.5rem 0; padding-left: 20px; font-family: ${fontFamily}; font-size: 10pt; color: ${textColor};">`)
+            .replace(/<\/ol>/g, `</ol>`)
+            .replace(/<li>/g, `<li style="margin-bottom: 0.25rem; font-family: ${fontFamily}; font-size: 10pt; color: ${textColor};"><span style="font-family: ${fontFamily}; font-size: 10pt; color: ${textColor};">`)
+            .replace(/<\/li>/g, `</span></li>`)
+            .replace(/<p>/g, `<p style="margin: 0 0 0.25rem 0; font-family: ${fontFamily}; font-size: 10pt; color: ${textColor}; line-height: ${lineHeight};"><span style="font-family: ${fontFamily}; font-size: 10pt; color: ${textColor};">`)
+            .replace(/<\/p>/g, `</span></p>`);
     };
 
     // Sub-compilers for Google Doc format
-    const renderHeader = () => `
-        <div class="resume-preview-header" style="border-bottom: 2px solid ${primaryColor}; padding-bottom: 0.5rem; margin-bottom: 1.5rem; text-align: center;">
-            <h1 style="color: ${primaryColor}; font-size: 24pt; margin: 0 0 0.5rem 0; font-family: ${fontFamily};">${personalInfo.fullName || 'Your Name'}</h1>
-            <div class="resume-preview-contacts" style="text-align: center; font-size: 9pt; font-family: ${fontFamily}; margin-bottom: 1rem; color: ${textColor};">
-                ${personalInfo.email ? `<span style="margin: 0 10px; display: inline-block;">✉ ${personalInfo.email}</span>` : ''}
-                ${personalInfo.phone ? `<span style="margin: 0 10px; display: inline-block;">📞 ${personalInfo.phone}</span>` : ''}
-                ${personalInfo.location ? `<span style="margin: 0 10px; display: inline-block;">📍 ${personalInfo.location}</span>` : ''}
-                ${personalInfo.website ? `<span style="margin: 0 10px; display: inline-block;">🌐 <a href="${personalInfo.website}" style="color: ${secondaryColor}; text-decoration: none;">${personalInfo.website.replace(/^https?:\/\//, '')}</a></span>` : ''}
-                ${personalInfo.linkedin ? `<span style="margin: 0 10px; display: inline-block;">🔗 <a href="${personalInfo.linkedin}" style="color: ${secondaryColor}; text-decoration: none;">LinkedIn</a></span>` : ''}
-                ${personalInfo.github ? `<span style="margin: 0 10px; display: inline-block;">💻 <a href="${personalInfo.github}" style="color: ${secondaryColor}; text-decoration: none;">GitHub</a></span>` : ''}
+    const renderHeader = () => {
+        const contactItems = [
+            personalInfo.email ? `✉ ${personalInfo.email}` : null,
+            personalInfo.phone ? `📞 ${personalInfo.phone}` : null,
+            personalInfo.location ? `📍 ${personalInfo.location}` : null,
+            personalInfo.website ? `🌐 <a href="${personalInfo.website}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none; font-family: ${fontFamily}; font-size: 9.5pt;">${personalInfo.website.replace(/^https?:\/\//, '')}</span></a>` : null,
+            personalInfo.linkedin ? `🔗 <a href="${personalInfo.linkedin}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none; font-family: ${fontFamily}; font-size: 9.5pt;">LinkedIn</span></a>` : null,
+            personalInfo.github ? `💻 <a href="${personalInfo.github}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none; font-family: ${fontFamily}; font-size: 9.5pt;">GitHub</span></a>` : null
+        ].filter(Boolean);
+
+        return `
+            <div class="resume-preview-header" style="border-bottom: 2px solid ${primaryColor}; padding-bottom: 0.5rem; margin-bottom: 1.5rem; text-align: center;">
+                <h1 style="margin: 0 0 0.5rem 0; line-height: 1.1; text-align: center;">
+                    <span style="color: ${primaryColor}; font-size: 26pt; font-weight: bold; font-family: ${fontFamily};">${personalInfo.fullName || 'Your Name'}</span>
+                </h1>
+                <p style="text-align: center; margin: 0 0 1rem 0; font-family: ${fontFamily}; font-size: 9.5pt; color: ${textColor}; line-height: 1.4;">
+                    <span style="font-family: ${fontFamily}; font-size: 9.5pt; color: ${textColor};">
+                        ${contactItems.join('   |   ')}
+                    </span>
+                </p>
+                ${personalInfo.customSubline ? `
+                <p style="text-align: center; margin: 0 0 1rem 0; font-family: ${fontFamily}; font-size: 9.5pt; color: ${textColor}; line-height: 1.4; font-weight: bold;">
+                    <span style="font-family: ${fontFamily}; font-size: 9.5pt; color: ${textColor}; font-weight: bold;">${personalInfo.customSubline}</span>
+                </p>` : ''}
             </div>
-        </div>
-    `;
+        `;
+    };
 
     const renderSection = (secKey) => {
         switch (secKey) {
@@ -312,27 +345,35 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
                 if (!personalInfo.summary) return '';
                 return `
                     <div class="resume-preview-section resume-preview-summary" style="margin-bottom: 1.5rem;">
-                        <h2 style="color: ${primaryColor}; font-size: 13pt; border-bottom: 1px solid ${primaryColor}; padding-bottom: 3px; margin-top: 0; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-family: ${fontFamily};">Professional Summary</h2>
-                        <p style="margin: 0; line-height: ${lineHeight}; color: ${textColor}; font-family: ${fontFamily};">${personalInfo.summary}</p>
+                        <h2 style="margin-top: 1.5rem; margin-bottom: 0.25rem;">
+                            <span style="color: ${primaryColor}; font-size: 14pt; font-weight: bold; font-family: ${fontFamily}; text-transform: uppercase; letter-spacing: 0.5px;">Professional Summary</span>
+                        </h2>
+                        <hr style="border: none; border-top: 1px solid ${primaryColor}; margin-top: 2px; margin-bottom: 8px;" />
+                        <p style="margin: 0; line-height: ${lineHeight};">
+                            <span style="font-size: 10pt; color: ${textColor}; font-family: ${fontFamily};">${personalInfo.summary}</span>
+                        </p>
                     </div>
                 `;
             case 'experience':
                 if (experience.length === 0) return '';
                 return `
                     <div class="resume-preview-section resume-preview-experience" style="margin-bottom: 1.5rem;">
-                        <h2 style="color: ${primaryColor}; font-size: 13pt; border-bottom: 1px solid ${primaryColor}; padding-bottom: 3px; margin-top: 0; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-family: ${fontFamily};">Professional Experience</h2>
+                        <h2 style="margin-top: 1.5rem; margin-bottom: 0.25rem;">
+                            <span style="color: ${primaryColor}; font-size: 14pt; font-weight: bold; font-family: ${fontFamily}; text-transform: uppercase; letter-spacing: 0.5px;">Professional Experience</span>
+                        </h2>
+                        <hr style="border: none; border-top: 1px solid ${primaryColor}; margin-top: 2px; margin-bottom: 8px;" />
                         ${experience.map(exp => `
-                            <div class="resume-preview-item" style="margin-bottom: 1rem;">
-                                <table style="width: 100%; border-collapse: collapse; border: none; font-size: 11pt; font-family: ${fontFamily}; font-weight: bold; margin-bottom: 0.15rem;">
+                            <div class="resume-preview-item" style="margin-bottom: 1.25rem;">
+                                <table style="width: 100%; border-collapse: collapse; border: none; font-family: ${fontFamily}; margin-bottom: 0.15rem;">
                                     <tr>
-                                        <td style="text-align: left; color: ${secondaryColor}; padding: 0;">${exp.company}</td>
-                                        <td style="text-align: right; font-weight: normal; color: ${textColor}; padding: 0;">${exp.location || ''}</td>
+                                        <td style="text-align: left; padding: 0;"><span style="color: ${secondaryColor}; font-size: 11.5pt; font-weight: bold; font-family: ${fontFamily};">${exp.company}</span></td>
+                                        <td style="text-align: right; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-family: ${fontFamily};">${exp.location || ''}</span></td>
                                     </tr>
                                 </table>
-                                <table style="width: 100%; border-collapse: collapse; border: none; font-size: 10pt; font-family: ${fontFamily}; font-style: italic; margin-bottom: 0.25rem; color: ${textColor};">
+                                <table style="width: 100%; border-collapse: collapse; border: none; font-family: ${fontFamily}; margin-bottom: 0.25rem;">
                                     <tr>
-                                        <td style="text-align: left; padding: 0;">${exp.position}</td>
-                                        <td style="text-align: right; padding: 0;">${formatDate(exp.startDate)} &ndash; ${exp.current ? 'Present' : formatDate(exp.endDate)}</td>
+                                        <td style="text-align: left; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-weight: bold; font-style: italic; font-family: ${fontFamily};">${exp.position}</span></td>
+                                        <td style="text-align: right; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-style: italic; font-family: ${fontFamily};">${formatDate(exp.startDate)} &ndash; ${exp.current ? 'Present' : formatDate(exp.endDate)}</span></td>
                                     </tr>
                                 </table>
                                 <div class="resume-preview-item-desc" style="font-size: 10pt; line-height: ${lineHeight}; color: ${textColor}; font-family: ${fontFamily};">
@@ -346,19 +387,22 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
                 if (education.length === 0) return '';
                 return `
                     <div class="resume-preview-section resume-preview-education" style="margin-bottom: 1.5rem;">
-                        <h2 style="color: ${primaryColor}; font-size: 13pt; border-bottom: 1px solid ${primaryColor}; padding-bottom: 3px; margin-top: 0; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-family: ${fontFamily};">Education</h2>
+                        <h2 style="margin-top: 1.5rem; margin-bottom: 0.25rem;">
+                            <span style="color: ${primaryColor}; font-size: 14pt; font-weight: bold; font-family: ${fontFamily}; text-transform: uppercase; letter-spacing: 0.5px;">Education</span>
+                        </h2>
+                        <hr style="border: none; border-top: 1px solid ${primaryColor}; margin-top: 2px; margin-bottom: 8px;" />
                         ${education.map(edu => `
-                            <div class="resume-preview-item" style="margin-bottom: 1rem;">
-                                <table style="width: 100%; border-collapse: collapse; border: none; font-size: 11pt; font-family: ${fontFamily}; font-weight: bold; margin-bottom: 0.15rem;">
+                            <div class="resume-preview-item" style="margin-bottom: 1.25rem;">
+                                <table style="width: 100%; border-collapse: collapse; border: none; font-family: ${fontFamily}; margin-bottom: 0.15rem;">
                                     <tr>
-                                        <td style="text-align: left; color: ${secondaryColor}; padding: 0;">${edu.school}</td>
-                                        <td style="text-align: right; font-weight: normal; color: ${textColor}; padding: 0;">${edu.location || ''}</td>
+                                        <td style="text-align: left; padding: 0;"><span style="color: ${secondaryColor}; font-size: 11.5pt; font-weight: bold; font-family: ${fontFamily};">${edu.school}</span></td>
+                                        <td style="text-align: right; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-family: ${fontFamily};">${edu.location || ''}</span></td>
                                     </tr>
                                 </table>
-                                <table style="width: 100%; border-collapse: collapse; border: none; font-size: 10pt; font-family: ${fontFamily}; font-style: italic; margin-bottom: 0.25rem; color: ${textColor};">
+                                <table style="width: 100%; border-collapse: collapse; border: none; font-family: ${fontFamily}; margin-bottom: 0.25rem;">
                                     <tr>
-                                        <td style="text-align: left; padding: 0;">${edu.degree} in ${edu.fieldOfStudy}</td>
-                                        <td style="text-align: right; padding: 0;">${formatDate(edu.startDate)} &ndash; ${formatDate(edu.endDate)}</td>
+                                        <td style="text-align: left; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-weight: bold; font-style: italic; font-family: ${fontFamily};">${edu.degree} in ${edu.fieldOfStudy}</span></td>
+                                        <td style="text-align: right; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-style: italic; font-family: ${fontFamily};">${formatDate(edu.startDate)} &ndash; ${formatDate(edu.endDate)}</span></td>
                                     </tr>
                                 </table>
                                 ${edu.description ? `<div class="resume-preview-item-desc" style="font-size: 10pt; line-height: ${lineHeight}; color: ${textColor}; font-family: ${fontFamily};">${parseMarkdown(edu.description)}</div>` : ''}
@@ -370,36 +414,42 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
                 if (skills.length === 0) return '';
                 return `
                     <div class="resume-preview-section resume-preview-skills" style="margin-bottom: 1.5rem;">
-                        <h2 style="color: ${primaryColor}; font-size: 13pt; border-bottom: 1px solid ${primaryColor}; padding-bottom: 3px; margin-top: 0; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-family: ${fontFamily};">Skills & Expertise</h2>
-                        <div class="resume-preview-skills-list" style="font-size: 10pt; line-height: 1.6; color: ${textColor}; font-family: ${fontFamily};">
-                            <strong>Technical Skills:</strong> ${skills.join(', ')}
-                        </div>
+                        <h2 style="margin-top: 1.5rem; margin-bottom: 0.25rem;">
+                            <span style="color: ${primaryColor}; font-size: 14pt; font-weight: bold; font-family: ${fontFamily}; text-transform: uppercase; letter-spacing: 0.5px;">Skills & Expertise</span>
+                        </h2>
+                        <hr style="border: none; border-top: 1px solid ${primaryColor}; margin-top: 2px; margin-bottom: 8px;" />
+                        <p style="margin: 0; line-height: 1.4;">
+                            <span style="font-size: 10pt; font-family: ${fontFamily}; color: ${textColor};"><strong>Technical Skills:</strong> ${skills.join(', ')}</span>
+                        </p>
                     </div>
                 `;
             case 'projects':
                 if (projects.length === 0) return '';
                 return `
                     <div class="resume-preview-section resume-preview-projects" style="margin-bottom: 1.5rem;">
-                        <h2 style="color: ${primaryColor}; font-size: 13pt; border-bottom: 1px solid ${primaryColor}; padding-bottom: 3px; margin-top: 0; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-family: ${fontFamily};">Key Projects</h2>
+                        <h2 style="margin-top: 1.5rem; margin-bottom: 0.25rem;">
+                            <span style="color: ${primaryColor}; font-size: 14pt; font-weight: bold; font-family: ${fontFamily}; text-transform: uppercase; letter-spacing: 0.5px;">Key Projects</span>
+                        </h2>
+                        <hr style="border: none; border-top: 1px solid ${primaryColor}; margin-top: 2px; margin-bottom: 8px;" />
                         ${projects.map(proj => `
-                            <div class="resume-preview-item" style="margin-bottom: 1rem;">
-                                <table style="width: 100%; border-collapse: collapse; border: none; font-size: 11pt; font-family: ${fontFamily}; font-weight: bold; margin-bottom: 0.15rem;">
+                            <div class="resume-preview-item" style="margin-bottom: 1.25rem;">
+                                <table style="width: 100%; border-collapse: collapse; border: none; font-family: ${fontFamily}; margin-bottom: 0.15rem;">
                                     <tr>
-                                        <td style="text-align: left; color: ${secondaryColor}; padding: 0;">${proj.name}</td>
+                                        <td style="text-align: left; padding: 0;"><span style="color: ${secondaryColor}; font-size: 11.5pt; font-weight: bold; font-family: ${fontFamily};">${proj.name}</span></td>
                                         <td style="text-align: right; padding: 0;">
-                                            ${proj.link ? `<a href="${proj.link}" style="font-size: 9pt; font-weight: normal; color: ${secondaryColor}; text-decoration: none;">🔗 Project Link</a>` : ''}
+                                            ${proj.link ? `<a href="${proj.link}" style="color: ${secondaryColor}; text-decoration: none;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${secondaryColor};">🔗 Project Link</span></a>` : ''}
                                         </td>
                                     </tr>
                                 </table>
-                                <table style="width: 100%; border-collapse: collapse; border: none; font-size: 10pt; font-family: ${fontFamily}; font-style: italic; margin-bottom: 0.25rem; color: ${textColor};">
+                                <table style="width: 100%; border-collapse: collapse; border: none; font-family: ${fontFamily}; margin-bottom: 0.25rem;">
                                     <tr>
-                                        <td style="text-align: left; padding: 0;">${proj.role || 'Contributor'}</td>
-                                        <td style="text-align: right; padding: 0;">${formatDate(proj.startDate)} &ndash; ${formatDate(proj.endDate)}</td>
+                                        <td style="text-align: left; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-weight: bold; font-style: italic; font-family: ${fontFamily};">${proj.role || 'Contributor'}</span></td>
+                                        <td style="text-align: right; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-style: italic; font-family: ${fontFamily};">${formatDate(proj.startDate)} &ndash; ${formatDate(proj.endDate)}</span></td>
                                     </tr>
                                 </table>
                                 <div class="resume-preview-item-desc" style="font-size: 10pt; line-height: ${lineHeight}; color: ${textColor}; font-family: ${fontFamily};">
                                     ${parseMarkdown(proj.description || '')}
-                                    ${proj.technologies && proj.technologies.length > 0 ? `<div style="margin-top:0.25rem;font-size:9pt;color:#475569;"><strong>Tech Stack:</strong> ${proj.technologies.join(', ')}</div>` : ''}
+                                    ${proj.technologies && proj.technologies.length > 0 ? `<p style="margin: 0.25rem 0 0 0;"><span style="font-size: 9pt; color: #555555; font-family: ${fontFamily};"><strong>Tech Stack:</strong> ${proj.technologies.join(', ')}</span></p>` : ''}
                                 </div>
                             </div>
                         `).join('')}
@@ -409,10 +459,13 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
                 if (certifications.length === 0) return '';
                 return `
                     <div class="resume-preview-section resume-preview-certifications" style="margin-bottom: 1.5rem;">
-                        <h2 style="color: ${primaryColor}; font-size: 13pt; border-bottom: 1px solid ${primaryColor}; padding-bottom: 3px; margin-top: 0; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-family: ${fontFamily};">Certifications</h2>
-                        <div class="resume-preview-skills-list" style="font-size: 10pt; line-height: 1.6; color: ${textColor}; font-family: ${fontFamily};">
-                            ${certifications.join(' &bull; ')}
-                        </div>
+                        <h2 style="margin-top: 1.5rem; margin-bottom: 0.25rem;">
+                            <span style="color: ${primaryColor}; font-size: 14pt; font-weight: bold; font-family: ${fontFamily}; text-transform: uppercase; letter-spacing: 0.5px;">Certifications</span>
+                        </h2>
+                        <hr style="border: none; border-top: 1px solid ${primaryColor}; margin-top: 2px; margin-bottom: 8px;" />
+                        <p style="margin: 0; line-height: 1.4;">
+                            <span style="font-size: 10pt; font-family: ${fontFamily}; color: ${textColor};">${certifications.join('  •  ')}</span>
+                        </p>
                     </div>
                 `;
             default:
@@ -439,21 +492,25 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
         bodyContent = `
             <table style="width: 100%; border-collapse: collapse; border: none; font-family: ${fontFamily}; table-layout: fixed;">
                 <tr>
-                    <td style="width: 32%; vertical-align: top; background-color: #f8fafc; border-right: 1px solid #e2e8f0; padding: 0 20px 0 0;">
+                    <td style="width: 30%; vertical-align: top; background-color: #f5f5f5; border-right: 1px solid #e0e0e0; padding: 10px 10px 10px 10px;">
                         <div class="resume-preview-header" style="text-align: left; border-bottom: none; margin-bottom: 1.5rem; padding-bottom: 0;">
-                            <h1 style="color: ${primaryColor}; font-size: 18pt; line-height: 1.2; margin: 0 0 1rem 0; font-family: ${fontFamily};">${personalInfo.fullName || 'Your Name'}</h1>
-                            <div class="resume-preview-contacts" style="text-align: left; font-size: 8.5pt; color: ${textColor}; line-height: 1.4; margin-bottom: 1rem;">
-                                ${personalInfo.email ? `<div style="margin-bottom: 0.25rem;">✉ ${personalInfo.email}</div>` : ''}
-                                ${personalInfo.phone ? `<div style="margin-bottom: 0.25rem;">📞 ${personalInfo.phone}</div>` : ''}
-                                ${personalInfo.location ? `<div style="margin-bottom: 0.25rem;">📍 ${personalInfo.location}</div>` : ''}
-                                ${personalInfo.website ? `<div style="margin-bottom: 0.25rem;">🌐 <a href="${personalInfo.website}" style="color: ${secondaryColor}; text-decoration: none;">Website</a></div>` : ''}
-                                ${personalInfo.linkedin ? `<div style="margin-bottom: 0.25rem;">🔗 <a href="${personalInfo.linkedin}" style="color: ${secondaryColor}; text-decoration: none;">LinkedIn</a></div>` : ''}
-                                ${personalInfo.github ? `<div style="margin-bottom: 0.25rem;">💻 <a href="${personalInfo.github}" style="color: ${secondaryColor}; text-decoration: none;">GitHub</a></div>` : ''}
+                            <h1 style="margin: 0 0 1rem 0; line-height: 1.2;">
+                                <span style="color: ${primaryColor}; font-size: 22pt; font-weight: bold; font-family: ${fontFamily};">${personalInfo.fullName || 'Your Name'}</span>
+                            </h1>
+                            <div class="resume-preview-contacts" style="margin-bottom: 1rem;">
+                                ${personalInfo.email ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};">✉ ${personalInfo.email}</span></p>` : ''}
+                                ${personalInfo.phone ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};">📞 ${personalInfo.phone}</span></p>` : ''}
+                                ${personalInfo.location ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};">📍 ${personalInfo.location}</span></p>` : ''}
+                                ${personalInfo.website ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};">🌐 <a href="${personalInfo.website}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none;">Website</span></a></span></p>` : ''}
+                                ${personalInfo.linkedin ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};">🔗 <a href="${personalInfo.linkedin}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none;">LinkedIn</span></a></span></p>` : ''}
+                                ${personalInfo.github ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};">💻 <a href="${personalInfo.github}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none;">GitHub</span></a></span></p>` : ''}
                             </div>
+                            ${personalInfo.customSubline ? `<p style="margin: 0.5rem 0 0.25rem 0; line-height: 1.4; font-weight: bold;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor}; font-weight: bold;">${personalInfo.customSubline}</span></p>` : ''}
                         </div>
                         ${leftColContent}
                     </td>
-                    <td style="width: 68%; vertical-align: top; padding: 0 0 0 25px;">
+                    <td style="width: 3%; min-width: 15px; vertical-align: top; padding: 0;"></td>
+                    <td style="width: 67%; vertical-align: top; padding: 10px 0 0 0;">
                         ${rightColContent}
                     </td>
                 </tr>
@@ -490,7 +547,7 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
             font-family: ${fontFamily};
             font-size: ${fontSize};
             line-height: ${lineHeight};
-            padding: ${margins};
+            padding: 0; /* Google Docs will apply its own page margins */
         }
         strong {
             color: ${primaryColor};

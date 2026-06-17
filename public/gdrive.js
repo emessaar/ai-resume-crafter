@@ -173,7 +173,27 @@ export async function uploadToGoogleDrive(fileName, textContent, mimeType = 'tex
 /**
  * Upload an HTML resume and convert it directly to an editable Google Doc.
  */
-export async function uploadAsGoogleDoc(fileName, htmlContent) {
+function parseMarginToPt(marginStr) {
+    if (!marginStr) return 36; // Default to 0.5 in (36 pt)
+    const num = parseFloat(marginStr);
+    if (isNaN(num)) return 36;
+    if (marginStr.includes('in')) {
+        return num * 72;
+    } else if (marginStr.includes('cm')) {
+        return num * 28.346;
+    } else if (marginStr.includes('mm')) {
+        return num * 2.8346;
+    } else if (marginStr.includes('pt')) {
+        return num;
+    }
+    // Default to inches * 72 if no units match but it looks like a fraction
+    return num * 72;
+}
+
+/**
+ * Upload an HTML resume and convert it directly to an editable Google Doc.
+ */
+export async function uploadAsGoogleDoc(fileName, htmlContent, marginStr) {
     if (!accessToken) {
         accessToken = await getSetting('gdrive_access_token');
     }
@@ -226,6 +246,39 @@ export async function uploadAsGoogleDoc(fileName, htmlContent) {
     const responseData = await response.json();
     const fileId = responseData.id;
     const webViewLink = `https://docs.google.com/document/d/${fileId}/edit?usp=drivesdk`;
+
+    // Apply document style adjustments (e.g. page margins) via the Google Docs API
+    try {
+        const marginPt = parseMarginToPt(marginStr);
+        const updateResponse = await fetch(`https://docs.googleapis.com/v1/documents/${fileId}:batchUpdate`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                requests: [
+                    {
+                        updateDocumentStyle: {
+                            documentStyle: {
+                                marginTop: { magnitude: marginPt, unit: 'PT' },
+                                marginBottom: { magnitude: marginPt, unit: 'PT' },
+                                marginLeft: { magnitude: marginPt, unit: 'PT' },
+                                marginRight: { magnitude: marginPt, unit: 'PT' }
+                            },
+                            fields: 'marginTop,marginBottom,marginLeft,marginRight'
+                        }
+                    }
+                ]
+            })
+        });
+
+        if (!updateResponse.ok) {
+            console.warn('Failed to update Google Doc margins via Docs API:', await updateResponse.text());
+        }
+    } catch (updateErr) {
+        console.error('Error updating Google Doc margins:', updateErr);
+    }
 
     return {
         fileId,

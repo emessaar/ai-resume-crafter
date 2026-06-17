@@ -22,9 +22,65 @@
         <!-- SIDEBAR NAVIGATION -->
         <aside class="sidebar" id="app-sidebar">
             <div class="sidebar-brand">
-                <div class="brand-logo">
-                    <i data-lucide="sparkles" class="brand-icon"></i>
-                </div>
+                <svg class="brand-logo-svg" width="38" height="38" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0; margin-right: 0.25rem;">
+                    <defs>
+                        <!-- Gradients -->
+                        <linearGradient id="brand-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#6366f1" />
+                            <stop offset="100%" stop-color="#a855f7" />
+                        </linearGradient>
+                        <linearGradient id="accent-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#fbbf24" />
+                            <stop offset="100%" stop-color="#f59e0b" />
+                        </linearGradient>
+                        <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#1e1b4b" />
+                            <stop offset="100%" stop-color="#311042" />
+                        </linearGradient>
+                        <linearGradient id="swoosh-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#6366f1" />
+                            <stop offset="50%" stop-color="#a855f7" />
+                            <stop offset="100%" stop-color="#fbbf24" />
+                        </linearGradient>
+                        
+                        <!-- Drop Shadow -->
+                        <filter id="shadow" x="0" y="0" width="100" height="100" filterUnits="userSpaceOnUse">
+                            <feDropShadow dx="1" dy="3" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.25"/>
+                        </filter>
+                        <filter id="glow" x="50" y="5" width="40" height="40" filterUnits="userSpaceOnUse">
+                            <feGaussianBlur stdDeviation="1.5" result="blur" />
+                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
+                    </defs>
+                    
+                    <!-- Outer Box / Rounded Card -->
+                    <rect width="100" height="100" rx="22" fill="url(#bg-grad)" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.5" />
+                    
+                    <!-- Swoosh Path behind front sheet -->
+                    <path d="M 22 76 C 18 50, 45 15, 75 24" stroke="url(#swoosh-grad)" stroke-width="4.5" stroke-linecap="round" fill="none" opacity="0.9" />
+
+                    <!-- Back Document Sheet -->
+                    <rect x="25" y="21" width="38" height="52" rx="7" fill="url(#brand-grad)" opacity="0.35" transform="rotate(-6 44 47)" />
+
+                    <!-- Front Document Sheet -->
+                    <rect x="32" y="26" width="38" height="52" rx="7" fill="#ffffff" filter="url(#shadow)" />
+                    
+                    <!-- Text Lines & Layout on Front Document -->
+                    <rect x="38" y="32" width="10" height="10" rx="2.5" fill="url(#brand-grad)" />
+                    <rect x="51" y="34" width="13" height="2" rx="1" fill="#94a3b8" />
+                    <rect x="51" y="39" width="9" height="1.5" rx="0.75" fill="#cbd5e1" />
+                    
+                    <rect x="38" y="47" width="26" height="1.5" rx="0.75" fill="#cbd5e1" />
+                    <rect x="38" y="51" width="26" height="1.5" rx="0.75" fill="#cbd5e1" />
+                    <rect x="38" y="55" width="20" height="1.5" rx="0.75" fill="#cbd5e1" />
+                    
+                    <rect x="38" y="61" width="26" height="1.5" rx="0.75" fill="#cbd5e1" />
+                    <rect x="38" y="65" width="24" height="1.5" rx="0.75" fill="#cbd5e1" />
+                    <rect x="38" y="69" width="14" height="1.5" rx="0.75" fill="#cbd5e1" />
+
+                    <!-- Sparkle Magic Star (Drawing Swoosh) -->
+                    <path d="M72 18 L74.5 24 L81 26 L74.5 28 L72 34 L69.5 28 L63 26 L69.5 24 Z" fill="url(#accent-grad)" filter="url(#glow)" />
+                </svg>
                 <h1 class="brand-title">Resume<span>Crafter</span></h1>
             </div>
             
@@ -106,6 +162,10 @@
                                 <div class="form-group col-span-2">
                                     <label for="input-github">GitHub Profile</label>
                                     <input type="url" id="input-github" placeholder="https://github.com/johndoe" class="form-input">
+                                </div>
+                                <div class="form-group col-span-2">
+                                    <label for="input-custom-subline">Custom Tagline / Subtitle (Under Website Links)</label>
+                                    <input type="text" id="input-custom-subline" placeholder="e.g. U.S. Citizen | Security Clearance | PMP Certified" class="form-input" maxlength="80">
                                 </div>
                                 <div class="form-group col-span-2">
                                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.25rem;">
@@ -376,8 +436,8 @@
                                 <div class="color-picker-item">
                                     <label for="color-style-primary">Primary Accent</label>
                                     <div class="color-input-wrapper">
-                                        <input type="color" id="color-style-primary" value="#4f46e5" class="color-input">
-                                        <input type="text" id="color-text-primary" value="#4f46e5" class="color-text">
+                                        <input type="color" id="color-style-primary" value="#374151" class="color-input">
+                                        <input type="text" id="color-text-primary" value="#374151" class="color-text">
                                     </div>
                                 </div>
                                 <div class="color-picker-item">

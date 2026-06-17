@@ -16,19 +16,25 @@ class MLStripper(HTMLParser):
         super().__init__()
         self.reset()
         self.fed = []
-        self.in_ignored_tag = False
+        self.ignored_stack = []
         self.ignored_tags = {'script', 'style', 'nav', 'footer', 'header', 'noscript', 'svg', 'iframe'}
 
     def handle_starttag(self, tag, attrs):
-        if tag.lower() in self.ignored_tags:
-            self.in_ignored_tag = True
+        tag_lower = tag.lower()
+        if tag_lower in self.ignored_tags:
+            self.ignored_stack.append(tag_lower)
 
     def handle_endtag(self, tag):
-        if tag.lower() in self.ignored_tags:
-            self.in_ignored_tag = False
+        tag_lower = tag.lower()
+        if tag_lower in self.ignored_tags:
+            if tag_lower in self.ignored_stack:
+                for i in range(len(self.ignored_stack) - 1, -1, -1):
+                    if self.ignored_stack[i] == tag_lower:
+                        self.ignored_stack.pop(i)
+                        break
 
     def handle_data(self, d):
-        if not self.in_ignored_tag:
+        if not self.ignored_stack:
             self.fed.append(d)
 
     def get_data(self):

@@ -65,6 +65,7 @@ const DOM = {
     inputWebsite: document.getElementById('input-website'),
     inputLinkedin: document.getElementById('input-linkedin'),
     inputGithub: document.getElementById('input-github'),
+    inputCustomSubline: document.getElementById('input-custom-subline'),
     inputSummary: document.getElementById('input-summary'),
     btnAiRewriteSummary: document.getElementById('btn-ai-rewrite-summary'),
     experienceList: document.getElementById('experience-list'),
@@ -340,7 +341,7 @@ async function loadSettings() {
 async function initializeTemplateStyles() {
     templateStyles = {
         primaryColor: DOM.colorPickerPrimary.value,
-        secondaryColor: '#4f46e5', // secondary
+        secondaryColor: '#374151', // secondary
         textColor: DOM.colorPickerText.value,
         backgroundColor: '#ffffff',
         fontFamily: DOM.inputFontFamily.value,
@@ -471,6 +472,7 @@ function populateEditorForms() {
     DOM.inputWebsite.value = activeResume.personalInfo.website || '';
     DOM.inputLinkedin.value = activeResume.personalInfo.linkedin || '';
     DOM.inputGithub.value = activeResume.personalInfo.github || '';
+    DOM.inputCustomSubline.value = activeResume.personalInfo.customSubline || '';
     DOM.inputSummary.value = activeResume.personalInfo.summary || '';
 }
 
@@ -903,6 +905,7 @@ function setupAutoSaveListeners() {
     bindSaveInput(DOM.inputWebsite, 'website');
     bindSaveInput(DOM.inputLinkedin, 'linkedin');
     bindSaveInput(DOM.inputGithub, 'github');
+    bindSaveInput(DOM.inputCustomSubline, 'customSubline');
     bindSaveInput(DOM.inputSummary, 'summary');
 
     // Repeater additions
@@ -1239,17 +1242,27 @@ DOM.btnScrapeJd.addEventListener('click', async () => {
         
         const data = await response.json();
         if (data.text) {
-            DOM.jobInputText.value = data.text;
+            const textInput = document.getElementById('job-input-text') || DOM.jobInputText;
+            textInput.value = data.text;
+            textInput.dispatchEvent(new Event('input'));
             
-            // Update DB
+            // Update DB with details
             const job = await db.jobDescriptions.get(activeJobId);
-            job.rawJdText = data.text;
-            job.jdUrl = url;
-            job.extractedKeywords = extractKeywords(data.text);
-            await db.jobDescriptions.update(activeJobId, job);
+            if (job) {
+                job.rawJdText = data.text;
+                job.jdUrl = url;
+                job.extractedKeywords = extractKeywords(data.text);
+                await db.jobDescriptions.update(activeJobId, job);
+            }
             
             triggerKeywordAnalysis();
-            alert('Job description scraped successfully!');
+            
+            const wordCount = data.text.trim().split(/\s+/).filter(Boolean).length;
+            if (wordCount < 25) {
+                alert(`Scraping completed, but the extracted text is very short (only ${wordCount} words).\n\nThis typically happens when the job board is protected by a login wall/anti-bot protection (like LinkedIn or Indeed), or is dynamically client-side rendered.\n\nPlease review the Job Description textarea and paste the full job text manually if it looks incomplete!`);
+            } else {
+                alert('Job description scraped successfully!');
+            }
         } else {
             throw new Error('No text returned from scraping.');
         }
@@ -1631,7 +1644,7 @@ function setupActionListeners() {
                     docName = `Resume - ${docName}`;
                 }
                 
-                const result = await uploadAsGoogleDoc(docName, htmlContent);
+                const result = await uploadAsGoogleDoc(docName, htmlContent, templateStyles?.margins);
                 
                 if (isTailoredMode && currentTailoredRecord) {
                     // Save link to DB against this tailored snapshot
@@ -2103,8 +2116,8 @@ function setupRewriteModalListeners() {
         
         let activeJd = '';
         if (activeJobId) {
-            const job = await db.jobs.get(activeJobId);
-            if (job) activeJd = job.description || '';
+            const job = await db.jobDescriptions.get(activeJobId);
+            if (job) activeJd = job.rawJdText || '';
         }
 
         executeBtn.disabled = true;

@@ -27,6 +27,7 @@ export async function getMasterResume() {
                 website: '',
                 linkedin: '',
                 github: '',
+                customSubline: '',
                 summary: ''
             },
             experience: [],
