@@ -62,12 +62,13 @@ To respect user privacy, ResumeCrafter has zero backend servers. All credentials
 3.  Click **Test Connection** to confirm connectivity.
 4.  Toggle the keyword analyzer tab in the drawer from *Regex Match* to *AI Match*.
 
-### 2. Local AI Models (Ollama, LiteLLM, etc)
-You can direct AI requests to locally hosted LLMs or OpenAI compatibility proxies:
+### 2. Other/Local AI Models (Ollama, vLLM, etc)
+You can direct AI requests to locally hosted LLMs or OpenAI compatible proxies:
 1.  Go to the **Integrations** tab and set the provider to **<Your Local LLM Provider, e.g. Ollama, LMStudio, etc >**.
-2.  Enter the base URL (e.g., `http://localhost:4000/v1` for LiteLLM or `http://localhost:11434/v1` for Ollama, or whatever port they are hosted on).
+2.  Enter the base URL (e.g., `http://localhost:11434/v1` for Ollama, or whatever port your LLM is hosted on).
 3.  Specify the target model name (e.g., `gemma4` or `gpt-3.5-turbo`).
 4.  Provide the Bearer token if utilizing an authenticated endpoint.
+5. Test AI Connection
 
 ### 3. Google Drive Sync Setup (Optional)
 ResumeCrafter includes a default Google OAuth Client ID pre-configured for `http://localhost:8000` environments. 
