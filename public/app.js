@@ -8,7 +8,8 @@ import {
 import { 
     BUILTIN_TEMPLATES, 
     applyStyleVariables, 
-    compileResumeHtml 
+    compileResumeHtml,
+    compileGoogleDocHtml
 } from './templates.js';
 import { 
     extractKeywords, 
@@ -21,7 +22,8 @@ import {
     initGoogleClient, 
     requestGoogleLogin, 
     logoutGoogleDrive, 
-    uploadToGoogleDrive 
+    uploadToGoogleDrive,
+    uploadAsGoogleDoc
 } from './gdrive.js';
 
 // State Variables
@@ -124,6 +126,7 @@ const DOM = {
     btnExportMd: document.getElementById('btn-export-md'),
     btnExportJson: document.getElementById('btn-export-json'),
     btnSyncGdrive: document.getElementById('btn-sync-gdrive'),
+    btnSyncGdoc: document.getElementById('btn-sync-gdoc'),
 
     // Keyword Matcher
     jdScoreBadge: document.getElementById('jd-score-badge'),
@@ -1598,7 +1601,53 @@ function setupActionListeners() {
             alert(`GDrive Sync Failed: ${err.message}`);
         } finally {
             DOM.btnSyncGdrive.disabled = false;
-            DOM.btnSyncGdrive.innerHTML = `<i data-lucide="cloud-upload"></i> <span>Sync Drive</span>`;
+            DOM.btnSyncGdrive.innerHTML = `<i data-lucide="cloud-upload"></i> <span>Sync MD</span>`;
+            lucide.createIcons();
+        }
+    });
+
+    // Gdoc Sync Action
+    DOM.btnSyncGdoc.addEventListener('click', async () => {
+        if (!gdriveConnected) {
+            alert('Google Drive is not linked. Please configure your Client ID in the Google Drive tab and login.');
+            document.getElementById('nav-btn-gdrive').click();
+            return;
+        }
+        
+        DOM.btnSyncGdoc.disabled = true;
+        DOM.btnSyncGdoc.innerHTML = `<i data-lucide="loader" class="spinner"></i> Syncing...`;
+        lucide.createIcons();
+        
+        try {
+            const templateId = DOM.selectTemplate.value;
+            const htmlContent = compileGoogleDocHtml(activeResume, templateId, sectionOrdering, templateStyles);
+            
+            let docName = activeResume.personalInfo.fullName || 'Resume';
+            if (isTailoredMode && activeJobId) {
+                const comp = DOM.jobInputCompany.value || 'Custom';
+                docName = `Resume - ${docName} (for ${comp})`;
+            } else {
+                docName = `Resume - ${docName}`;
+            }
+            
+            const result = await uploadAsGoogleDoc(docName, htmlContent);
+            
+            if (isTailoredMode && currentTailoredRecord) {
+                // Save link to DB against this tailored snapshot
+                currentTailoredRecord.gdriveFileId = result.fileId;
+                currentTailoredRecord.gdriveLink = result.webViewLink;
+                await db.tailoredResumes.put(currentTailoredRecord);
+            }
+            
+            alert(`Uploaded and converted successfully to Google Doc!\nFile Link: ${result.webViewLink}`);
+            
+            // Open docs edit link in a new tab
+            window.open(result.webViewLink, '_blank');
+        } catch (err) {
+            alert(`Google Doc Sync Failed: ${err.message}`);
+        } finally {
+            DOM.btnSyncGdoc.disabled = false;
+            DOM.btnSyncGdoc.innerHTML = `<i data-lucide="file-text"></i> <span>Sync Doc</span>`;
             lucide.createIcons();
         }
     });

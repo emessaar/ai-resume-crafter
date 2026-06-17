@@ -247,3 +247,261 @@ export function compileResumeHtml(resumeData, templateId, sectionOrder = ['summa
         `;
     }
 }
+
+/**
+ * Compile resume data into fully resolved standalone HTML designed specifically for Google Docs import.
+ * This converts grid columns into standard HTML tables, resolves CSS variables to explicit styles,
+ * and strips/replaces SVG icons with Google-doc-compatible Unicode characters.
+ */
+export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['summary', 'experience', 'projects', 'education', 'skills', 'certifications'], styles = {}) {
+    const { personalInfo, experience = [], education = [], skills = [], projects = [], certifications = [] } = resumeData;
+
+    // Helper: format dates nicely
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return dateStr;
+            return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        } catch {
+            return dateStr;
+        }
+    };
+
+    const primaryColor = styles.primaryColor || '#1e293b';
+    const secondaryColor = styles.secondaryColor || '#4f46e5';
+    const textColor = styles.textColor || '#334155';
+    const backgroundColor = styles.backgroundColor || '#ffffff';
+    const fontFamily = styles.fontFamily || 'Inter, sans-serif';
+    const fontSize = styles.fontSize || '11pt';
+    const lineHeight = styles.lineHeight || '1.4';
+    const margins = styles.margins || '0.75in';
+
+    // Simple markdown compiler fallback if marked is not available
+    const parseMarkdown = (text) => {
+        if (!text) return '';
+        if (window.marked && window.marked.parse) {
+            return window.marked.parse(text);
+        }
+        // Basic fallback replacements for bold, italic, and lists
+        let html = text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\r?\n/g, '<br>');
+        return html;
+    };
+
+    // Sub-compilers for Google Doc format
+    const renderHeader = () => `
+        <div class="resume-preview-header" style="border-bottom: 2px solid ${primaryColor}; padding-bottom: 0.5rem; margin-bottom: 1.5rem; text-align: center;">
+            <h1 style="color: ${primaryColor}; font-size: 24pt; margin: 0 0 0.5rem 0; font-family: ${fontFamily};">${personalInfo.fullName || 'Your Name'}</h1>
+            <div class="resume-preview-contacts" style="text-align: center; font-size: 9pt; font-family: ${fontFamily}; margin-bottom: 1rem; color: ${textColor};">
+                ${personalInfo.email ? `<span style="margin: 0 10px; display: inline-block;">✉ ${personalInfo.email}</span>` : ''}
+                ${personalInfo.phone ? `<span style="margin: 0 10px; display: inline-block;">📞 ${personalInfo.phone}</span>` : ''}
+                ${personalInfo.location ? `<span style="margin: 0 10px; display: inline-block;">📍 ${personalInfo.location}</span>` : ''}
+                ${personalInfo.website ? `<span style="margin: 0 10px; display: inline-block;">🌐 <a href="${personalInfo.website}" style="color: ${secondaryColor}; text-decoration: none;">${personalInfo.website.replace(/^https?:\/\//, '')}</a></span>` : ''}
+                ${personalInfo.linkedin ? `<span style="margin: 0 10px; display: inline-block;">🔗 <a href="${personalInfo.linkedin}" style="color: ${secondaryColor}; text-decoration: none;">LinkedIn</a></span>` : ''}
+                ${personalInfo.github ? `<span style="margin: 0 10px; display: inline-block;">💻 <a href="${personalInfo.github}" style="color: ${secondaryColor}; text-decoration: none;">GitHub</a></span>` : ''}
+            </div>
+        </div>
+    `;
+
+    const renderSection = (secKey) => {
+        switch (secKey) {
+            case 'summary':
+                if (!personalInfo.summary) return '';
+                return `
+                    <div class="resume-preview-section resume-preview-summary" style="margin-bottom: 1.5rem;">
+                        <h2 style="color: ${primaryColor}; font-size: 13pt; border-bottom: 1px solid ${primaryColor}; padding-bottom: 3px; margin-top: 0; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-family: ${fontFamily};">Professional Summary</h2>
+                        <p style="margin: 0; line-height: ${lineHeight}; color: ${textColor}; font-family: ${fontFamily};">${personalInfo.summary}</p>
+                    </div>
+                `;
+            case 'experience':
+                if (experience.length === 0) return '';
+                return `
+                    <div class="resume-preview-section resume-preview-experience" style="margin-bottom: 1.5rem;">
+                        <h2 style="color: ${primaryColor}; font-size: 13pt; border-bottom: 1px solid ${primaryColor}; padding-bottom: 3px; margin-top: 0; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-family: ${fontFamily};">Professional Experience</h2>
+                        ${experience.map(exp => `
+                            <div class="resume-preview-item" style="margin-bottom: 1rem;">
+                                <table style="width: 100%; border-collapse: collapse; border: none; font-size: 11pt; font-family: ${fontFamily}; font-weight: bold; margin-bottom: 0.15rem;">
+                                    <tr>
+                                        <td style="text-align: left; color: ${secondaryColor}; padding: 0;">${exp.company}</td>
+                                        <td style="text-align: right; font-weight: normal; color: ${textColor}; padding: 0;">${exp.location || ''}</td>
+                                    </tr>
+                                </table>
+                                <table style="width: 100%; border-collapse: collapse; border: none; font-size: 10pt; font-family: ${fontFamily}; font-style: italic; margin-bottom: 0.25rem; color: ${textColor};">
+                                    <tr>
+                                        <td style="text-align: left; padding: 0;">${exp.position}</td>
+                                        <td style="text-align: right; padding: 0;">${formatDate(exp.startDate)} &ndash; ${exp.current ? 'Present' : formatDate(exp.endDate)}</td>
+                                    </tr>
+                                </table>
+                                <div class="resume-preview-item-desc" style="font-size: 10pt; line-height: ${lineHeight}; color: ${textColor}; font-family: ${fontFamily};">
+                                    ${parseMarkdown(exp.description || '')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            case 'education':
+                if (education.length === 0) return '';
+                return `
+                    <div class="resume-preview-section resume-preview-education" style="margin-bottom: 1.5rem;">
+                        <h2 style="color: ${primaryColor}; font-size: 13pt; border-bottom: 1px solid ${primaryColor}; padding-bottom: 3px; margin-top: 0; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-family: ${fontFamily};">Education</h2>
+                        ${education.map(edu => `
+                            <div class="resume-preview-item" style="margin-bottom: 1rem;">
+                                <table style="width: 100%; border-collapse: collapse; border: none; font-size: 11pt; font-family: ${fontFamily}; font-weight: bold; margin-bottom: 0.15rem;">
+                                    <tr>
+                                        <td style="text-align: left; color: ${secondaryColor}; padding: 0;">${edu.school}</td>
+                                        <td style="text-align: right; font-weight: normal; color: ${textColor}; padding: 0;">${edu.location || ''}</td>
+                                    </tr>
+                                </table>
+                                <table style="width: 100%; border-collapse: collapse; border: none; font-size: 10pt; font-family: ${fontFamily}; font-style: italic; margin-bottom: 0.25rem; color: ${textColor};">
+                                    <tr>
+                                        <td style="text-align: left; padding: 0;">${edu.degree} in ${edu.fieldOfStudy}</td>
+                                        <td style="text-align: right; padding: 0;">${formatDate(edu.startDate)} &ndash; ${formatDate(edu.endDate)}</td>
+                                    </tr>
+                                </table>
+                                ${edu.description ? `<div class="resume-preview-item-desc" style="font-size: 10pt; line-height: ${lineHeight}; color: ${textColor}; font-family: ${fontFamily};">${parseMarkdown(edu.description)}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            case 'skills':
+                if (skills.length === 0) return '';
+                return `
+                    <div class="resume-preview-section resume-preview-skills" style="margin-bottom: 1.5rem;">
+                        <h2 style="color: ${primaryColor}; font-size: 13pt; border-bottom: 1px solid ${primaryColor}; padding-bottom: 3px; margin-top: 0; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-family: ${fontFamily};">Skills & Expertise</h2>
+                        <div class="resume-preview-skills-list" style="font-size: 10pt; line-height: 1.6; color: ${textColor}; font-family: ${fontFamily};">
+                            <strong>Technical Skills:</strong> ${skills.join(', ')}
+                        </div>
+                    </div>
+                `;
+            case 'projects':
+                if (projects.length === 0) return '';
+                return `
+                    <div class="resume-preview-section resume-preview-projects" style="margin-bottom: 1.5rem;">
+                        <h2 style="color: ${primaryColor}; font-size: 13pt; border-bottom: 1px solid ${primaryColor}; padding-bottom: 3px; margin-top: 0; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-family: ${fontFamily};">Key Projects</h2>
+                        ${projects.map(proj => `
+                            <div class="resume-preview-item" style="margin-bottom: 1rem;">
+                                <table style="width: 100%; border-collapse: collapse; border: none; font-size: 11pt; font-family: ${fontFamily}; font-weight: bold; margin-bottom: 0.15rem;">
+                                    <tr>
+                                        <td style="text-align: left; color: ${secondaryColor}; padding: 0;">${proj.name}</td>
+                                        <td style="text-align: right; padding: 0;">
+                                            ${proj.link ? `<a href="${proj.link}" style="font-size: 9pt; font-weight: normal; color: ${secondaryColor}; text-decoration: none;">🔗 Project Link</a>` : ''}
+                                        </td>
+                                    </tr>
+                                </table>
+                                <table style="width: 100%; border-collapse: collapse; border: none; font-size: 10pt; font-family: ${fontFamily}; font-style: italic; margin-bottom: 0.25rem; color: ${textColor};">
+                                    <tr>
+                                        <td style="text-align: left; padding: 0;">${proj.role || 'Contributor'}</td>
+                                        <td style="text-align: right; padding: 0;">${formatDate(proj.startDate)} &ndash; ${formatDate(proj.endDate)}</td>
+                                    </tr>
+                                </table>
+                                <div class="resume-preview-item-desc" style="font-size: 10pt; line-height: ${lineHeight}; color: ${textColor}; font-family: ${fontFamily};">
+                                    ${parseMarkdown(proj.description || '')}
+                                    ${proj.technologies && proj.technologies.length > 0 ? `<div style="margin-top:0.25rem;font-size:9pt;color:#475569;"><strong>Tech Stack:</strong> ${proj.technologies.join(', ')}</div>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            case 'certifications':
+                if (certifications.length === 0) return '';
+                return `
+                    <div class="resume-preview-section resume-preview-certifications" style="margin-bottom: 1.5rem;">
+                        <h2 style="color: ${primaryColor}; font-size: 13pt; border-bottom: 1px solid ${primaryColor}; padding-bottom: 3px; margin-top: 0; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-family: ${fontFamily};">Certifications</h2>
+                        <div class="resume-preview-skills-list" style="font-size: 10pt; line-height: 1.6; color: ${textColor}; font-family: ${fontFamily};">
+                            ${certifications.join(' &bull; ')}
+                        </div>
+                    </div>
+                `;
+            default:
+                return '';
+        }
+    };
+
+    // Body content builder
+    let bodyContent = '';
+    if (templateId === 'split') {
+        const leftSections = ['skills', 'certifications', 'education'];
+        const rightSections = ['summary', 'experience', 'projects'];
+
+        const leftColContent = leftSections
+            .filter(sec => sectionOrder.includes(sec))
+            .map(sec => renderSection(sec))
+            .join('');
+
+        const rightColContent = rightSections
+            .filter(sec => sectionOrder.includes(sec))
+            .map(sec => renderSection(sec))
+            .join('');
+
+        bodyContent = `
+            <table style="width: 100%; border-collapse: collapse; border: none; font-family: ${fontFamily}; table-layout: fixed;">
+                <tr>
+                    <td style="width: 32%; vertical-align: top; background-color: #f8fafc; border-right: 1px solid #e2e8f0; padding: 0 20px 0 0;">
+                        <div class="resume-preview-header" style="text-align: left; border-bottom: none; margin-bottom: 1.5rem; padding-bottom: 0;">
+                            <h1 style="color: ${primaryColor}; font-size: 18pt; line-height: 1.2; margin: 0 0 1rem 0; font-family: ${fontFamily};">${personalInfo.fullName || 'Your Name'}</h1>
+                            <div class="resume-preview-contacts" style="text-align: left; font-size: 8.5pt; color: ${textColor}; line-height: 1.4; margin-bottom: 1rem;">
+                                ${personalInfo.email ? `<div style="margin-bottom: 0.25rem;">✉ ${personalInfo.email}</div>` : ''}
+                                ${personalInfo.phone ? `<div style="margin-bottom: 0.25rem;">📞 ${personalInfo.phone}</div>` : ''}
+                                ${personalInfo.location ? `<div style="margin-bottom: 0.25rem;">📍 ${personalInfo.location}</div>` : ''}
+                                ${personalInfo.website ? `<div style="margin-bottom: 0.25rem;">🌐 <a href="${personalInfo.website}" style="color: ${secondaryColor}; text-decoration: none;">Website</a></div>` : ''}
+                                ${personalInfo.linkedin ? `<div style="margin-bottom: 0.25rem;">🔗 <a href="${personalInfo.linkedin}" style="color: ${secondaryColor}; text-decoration: none;">LinkedIn</a></div>` : ''}
+                                ${personalInfo.github ? `<div style="margin-bottom: 0.25rem;">💻 <a href="${personalInfo.github}" style="color: ${secondaryColor}; text-decoration: none;">GitHub</a></div>` : ''}
+                            </div>
+                        </div>
+                        ${leftColContent}
+                    </td>
+                    <td style="width: 68%; vertical-align: top; padding: 0 0 0 25px;">
+                        ${rightColContent}
+                    </td>
+                </tr>
+            </table>
+        `;
+    } else {
+        // Stacked single column layout
+        const mainContent = sectionOrder.map(sec => renderSection(sec)).join('');
+        bodyContent = `
+            ${renderHeader()}
+            ${mainContent}
+        `;
+    }
+
+    // Wrap in standard full HTML template document
+    return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>${personalInfo.fullName || 'Resume'}</title>
+    <style>
+        body {
+            background-color: ${backgroundColor};
+            color: ${textColor};
+            font-family: ${fontFamily};
+            font-size: ${fontSize};
+            line-height: ${lineHeight};
+            margin: 0;
+            padding: 0;
+        }
+        .resume-sheet {
+            background-color: ${backgroundColor};
+            color: ${textColor};
+            font-family: ${fontFamily};
+            font-size: ${fontSize};
+            line-height: ${lineHeight};
+            padding: ${margins};
+        }
+        strong {
+            color: ${primaryColor};
+        }
+    </style>
+</head>
+<body>
+    <div class="resume-sheet template-${templateId}">
+        ${bodyContent}
+    </div>
+</body>
+</html>`;
+}
+

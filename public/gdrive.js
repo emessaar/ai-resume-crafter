@@ -169,3 +169,67 @@ export async function uploadToGoogleDrive(fileName, textContent, mimeType = 'tex
         webViewLink
     };
 }
+
+/**
+ * Upload an HTML resume and convert it directly to an editable Google Doc.
+ */
+export async function uploadAsGoogleDoc(fileName, htmlContent) {
+    if (!accessToken) {
+        accessToken = await getSetting('gdrive_access_token');
+    }
+    
+    if (!accessToken) {
+        throw new Error('Google Drive access is unauthorized. Connect to Google Drive first.');
+    }
+
+    // Retrieve or create 'resumecrafter' folder
+    const folderId = await getOrCreateFolder('resumecrafter');
+
+    const metadata = {
+        name: fileName,
+        mimeType: 'application/vnd.google-apps.document', // Target format
+        parents: [folderId]
+    };
+
+    const boundary = '-------resumecrafterBoundary3d9f108';
+    const delimiter = `\r\n--${boundary}\r\n`;
+    const closeDelimiter = `\r\n--${boundary}--`;
+
+    const body = 
+        delimiter +
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+        JSON.stringify(metadata) +
+        delimiter +
+        'Content-Type: text/html; charset=UTF-8\r\n\r\n' +
+        htmlContent +
+        closeDelimiter;
+
+    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': `multipart/related; boundary=${boundary}`
+        },
+        body: body
+    });
+
+    if (!response.ok) {
+        if (response.status === 401) {
+            accessToken = null;
+            await saveSetting('gdrive_access_token', '');
+            throw new Error('Google Drive authorization token has expired. Please re-authenticate.');
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Error occurred uploading to Google Drive.');
+    }
+
+    const responseData = await response.json();
+    const fileId = responseData.id;
+    const webViewLink = `https://docs.google.com/document/d/${fileId}/edit?usp=drivesdk`;
+
+    return {
+        fileId,
+        webViewLink
+    };
+}
+
