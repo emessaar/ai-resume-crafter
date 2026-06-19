@@ -76,6 +76,9 @@ const DOM = {
     inputCustomSubline: document.getElementById('input-custom-subline'),
     inputSummary: document.getElementById('input-summary'),
     btnAiRewriteSummary: document.getElementById('btn-ai-rewrite-summary'),
+    btnImportProfile: document.getElementById('btn-import-profile'),
+    btnExportProfile: document.getElementById('btn-export-profile'),
+    importProfileFile: document.getElementById('import-profile-file'),
     experienceList: document.getElementById('experience-list'),
     educationList: document.getElementById('education-list'),
     projectsList: document.getElementById('projects-list'),
@@ -1849,6 +1852,21 @@ function setupActionListeners() {
             }
         });
     }
+
+    // Profile Export — full master resume as named JSON
+    DOM.btnExportProfile.addEventListener('click', exportMasterProfile);
+
+    // Profile Import — trigger hidden file picker
+    DOM.btnImportProfile.addEventListener('click', () => {
+        DOM.importProfileFile.value = ''; // reset so same file can be re-imported
+        DOM.importProfileFile.click();
+    });
+
+    DOM.importProfileFile.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        await importMasterProfile(file);
+    });
 }
 
 function getExportFileName(extension) {
@@ -1863,6 +1881,106 @@ function getExportFileName(extension) {
     }
     
     return `resume_${cleanName}${extension}`;
+}
+
+/* ==========================================================================
+   PROFILE IMPORT / EXPORT
+   ========================================================================== */
+
+function exportMasterProfile() {
+    if (!activeResume) {
+        alert('No profile loaded to export.');
+        return;
+    }
+
+    // Build export payload — strip internal DB id so it imports cleanly
+    const payload = {
+        _schemaVersion: 1,
+        _exportedAt: new Date().toISOString(),
+        _appName: 'ResumeCrafter',
+        ...activeResume
+    };
+
+    const name = (activeResume.personalInfo?.fullName || 'profile').trim();
+    const cleanName = name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const fileName = `resumecrafter_profile_${cleanName}.json`;
+
+    downloadFile(fileName, JSON.stringify(payload, null, 2), 'application/json');
+
+    // Visual feedback
+    const btn = DOM.btnExportProfile;
+    const original = btn.innerHTML;
+    btn.innerHTML = '<i data-lucide="check"></i> <span>Exported!</span>';
+    btn.disabled = true;
+    lucide.createIcons();
+    setTimeout(() => {
+        btn.innerHTML = original;
+        btn.disabled = false;
+        lucide.createIcons();
+    }, 2000);
+}
+
+async function importMasterProfile(file) {
+    let parsed;
+    try {
+        const text = await file.text();
+        parsed = JSON.parse(text);
+    } catch (err) {
+        alert(`Import failed: the file is not valid JSON.\n${err.message}`);
+        return;
+    }
+
+    // Basic validation — must have at least personalInfo or known resume keys
+    const knownKeys = ['personalInfo', 'experience', 'education', 'projects', 'skills', 'certifications', 'summary'];
+    const hasKnownKey = knownKeys.some(k => k in parsed);
+    if (!hasKnownKey) {
+        alert('Import failed: this JSON does not appear to be a ResumeCrafter profile.\nExpected keys like personalInfo, experience, education, etc.');
+        return;
+    }
+
+    const confirmed = confirm(
+        `Import profile from "${file.name}"?\n\n` +
+        `Name: ${parsed.personalInfo?.fullName || '(unnamed)'}\n` +
+        `Exported: ${parsed._exportedAt ? new Date(parsed._exportedAt).toLocaleString() : 'unknown'}\n\n` +
+        `⚠️  This will overwrite your current master profile. Continue?`
+    );
+    if (!confirmed) return;
+
+    // Strip export metadata before saving
+    const { _schemaVersion, _exportedAt, _appName, id, ...profileData } = parsed;
+
+    try {
+        // Save to backend — saveMasterResume handles upsert
+        const saved = await saveMasterResume(profileData);
+        masterResumeId = saved.id ?? masterResumeId;
+        activeResume = { ...profileData, id: masterResumeId };
+    } catch (err) {
+        // If server is unavailable, apply in-memory and warn
+        console.warn('importMasterProfile: server save failed, applying in-memory only.', err.message);
+        activeResume = { ...profileData, id: masterResumeId };
+    }
+
+    // Reload all editor forms from the new data
+    populateEditorForms();
+    renderExperienceList();
+    renderEducationList();
+    renderProjectList();
+    renderSkillsTags();
+    renderCertTags();
+    updatePageTitle(activeResume.personalInfo?.fullName);
+    refreshPreviewSheet();
+
+    // Visual feedback
+    const btn = DOM.btnImportProfile;
+    const original = btn.innerHTML;
+    btn.innerHTML = '<i data-lucide="check"></i> <span>Imported!</span>';
+    btn.disabled = true;
+    lucide.createIcons();
+    setTimeout(() => {
+        btn.innerHTML = original;
+        btn.disabled = false;
+        lucide.createIcons();
+    }, 2500);
 }
 
 function downloadFile(filename, content, mimeType) {

@@ -122,8 +122,22 @@
             <!-- VIEW 1: MASTER RESUME EDITOR -->
             <section class="workspace-tab active" id="tab-master">
                 <header class="tab-header">
-                    <h2>Master Resume Profile</h2>
-                    <p>Build your primary resume context. This functions as the base dataset for all tailored jobs.</p>
+                    <div class="tab-header-text">
+                        <h2>Master Resume Profile</h2>
+                        <p>Build your primary resume context. This functions as the base dataset for all tailored jobs.</p>
+                    </div>
+                    <div class="tab-header-actions">
+                        <button class="btn btn-icon btn-sm" id="btn-import-profile" title="Import profile from JSON file">
+                            <i data-lucide="upload"></i>
+                            <span>Import JSON</span>
+                        </button>
+                        <button class="btn btn-icon btn-sm" id="btn-export-profile" title="Export profile as JSON file">
+                            <i data-lucide="download"></i>
+                            <span>Export JSON</span>
+                        </button>
+                        <!-- Hidden file input for import -->
+                        <input type="file" id="import-profile-file" accept=".json,application/json" style="display: none;">
+                    </div>
                 </header>
                 
                 <div class="tab-body">
