@@ -1,9 +1,16 @@
 import { 
-    db, 
     getMasterResume, 
     saveMasterResume, 
     getSetting, 
-    saveSetting 
+    saveSetting,
+    getJobs,
+    getJob,
+    addJob,
+    updateJob,
+    deleteJob,
+    getTailoredResume,
+    saveTailoredResume,
+    deleteTailoredResume
 } from './db.js';
 import { 
     BUILTIN_TEMPLATES, 
@@ -148,8 +155,8 @@ const DOM = {
     statMissing: document.getElementById('stat-missing'),
     tagsMatched: document.getElementById('tags-matched'),
     tagsMissing: document.getElementById('tags-missing'),
-    btnToggleDrawer: document.getElementById('btn-toggle-drawer'),
-    keywordPanel: document.getElementById('keyword-panel'),
+    btnTogglePreviewSection: document.getElementById('btn-toggle-preview-section'),
+    rightPreviewSection: document.getElementById('right-preview-section'),
     inputGeminiApiKey: document.getElementById('gemini-api-key'),
     btnModeLocal: document.getElementById('btn-mode-local'),
     btnModeLlm: document.getElementById('btn-mode-llm'),
@@ -189,59 +196,57 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // 2. Setup Navigation tabs
+    // 2. Setup UI chrome immediately (no API dependency)
+    setupResizableView();
+    await setupCollapsibleSidebar();
+
+    // 3. Setup Navigation tabs
     setupNavigation();
 
-    // 3. Load DB settings
+    // 4. Load DB settings
     await loadSettings();
 
-    // 4. Load Master Resume
+    // 5. Load Master Resume
     const master = await getMasterResume();
     masterResumeId = master.id;
     activeResume = master;
     updatePageTitle(master.personalInfo?.fullName);
     
-    // 5. Populate Editor Forms
+    // 6. Populate Editor Forms
     populateEditorForms();
 
-    // 6. Draw Repeater Cards
+    // 7. Draw Repeater Cards
     renderExperienceList();
     renderEducationList();
     renderProjectList();
     renderSkillsTags();
     renderCertTags();
 
-    // 7. Load Jobs Tracker
+    // 8. Load Jobs Tracker
     await loadJobsList();
 
-    // 8. Bind Accordions
+    // 9. Bind Accordions
     setupAccordions();
 
-    // 9. Bind Auto-Save listeners
+    // 10. Bind Auto-Save listeners
     setupAutoSaveListeners();
 
-    // 10. Load and Bind Styles
+    // 11. Load and Bind Styles
     await initializeTemplateStyles();
 
-    // 11. Bind Exporters and Actions
+    // 12. Bind Exporters and Actions
     setupActionListeners();
 
-    // 12. Check Google API Connection status
+    // 13. Check Google API Connection status
     await setupGoogleApi();
 
-    // 13. Setup Gemini API configuration settings
+    // 14. Setup Gemini API configuration settings
     await setupGeminiApi();
 
-    // 14. Refresh Preview sheet
+    // 15. Refresh Preview sheet
     refreshPreviewSheet();
 
-    // 15. Setup Resizable Split View
-    setupResizableView();
-
-    // 16. Setup Collapsible Sidebar
-    await setupCollapsibleSidebar();
-
-    // 17. Setup AI Rewrite Modal listeners & Summary button
+    // 16. Setup AI Rewrite Modal listeners & Summary button
     setupRewriteModalListeners();
     DOM.btnAiRewriteSummary.addEventListener('click', () => {
         openRewriteModal(DOM.inputSummary);
@@ -271,10 +276,12 @@ function setupNavigation() {
         });
     });
 
-    // Accordion UI expansion
-    DOM.btnToggleDrawer.addEventListener('click', () => {
-        DOM.keywordPanel.classList.toggle('collapsed');
-    });
+    // Accordion UI expansion for Live Preview collapsible panel
+    if (DOM.btnTogglePreviewSection && DOM.rightPreviewSection) {
+        DOM.btnTogglePreviewSection.addEventListener('click', () => {
+            DOM.rightPreviewSection.classList.toggle('collapsed');
+        });
+    }
 
     // Independent Collapsible Job Description toggle
     if (DOM.btnToggleJdTextarea && DOM.jdTextareaContainer && DOM.jdTextareaChevron) {
@@ -1034,7 +1041,7 @@ async function saveActiveResume() {
     if (isTailoredMode && currentTailoredRecord) {
         // Saving job specific version
         currentTailoredRecord.resumeSnapshot = activeResume;
-        await db.tailoredResumes.put(currentTailoredRecord);
+        await saveTailoredResume(currentTailoredRecord);
     } else {
         // Saving master
         await saveMasterResume(activeResume);
@@ -1069,7 +1076,7 @@ function refreshPreviewSheet() {
 
 async function loadJobsList() {
     DOM.jobsContainer.innerHTML = '';
-    const jobs = await db.jobDescriptions.orderBy('createdDate').reverse().toArray();
+    const jobs = await getJobs();
     
     if (jobs.length === 0) {
         DOM.jobsContainer.innerHTML = `<p class="help-text" style="text-align:center; padding:1rem;">No jobs registered yet.</p>`;
@@ -1084,17 +1091,15 @@ async function loadJobsList() {
         const formattedDate = new Date(job.createdDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         
         // Scan for customized status
-        const tailored = await db.tailoredResumes.where('jobId').equals(job.id).first();
-        const customizeIndicator = tailored ? `<span style="font-size:0.7rem; color:var(--color-purple); font-weight:600;"><i data-lucide="file-signature" style="width:10px;height:10px;vertical-align:middle;display:inline-block;"></i> Custom</span>` : '';
+        const tailored = await getTailoredResume(job.id);
+        const customizeIndicator = tailored ? `<span class="job-card-custom-indicator" style="font-size:0.7rem; color:var(--color-purple); font-weight:600; display:flex; align-items:center; gap:2px;"><i data-lucide="file-signature" style="width:10px;height:10px;"></i>Custom</span>` : '';
         
         card.innerHTML = `
-            <div class="job-card-title">${job.jobTitle || 'Untitled Role'}</div>
-            <div class="job-card-company">${job.companyName || 'Unknown Company'}</div>
-            <div class="job-card-meta">
-                <span class="job-status-badge ${job.status.toLowerCase()}">${job.status}</span>
+            <div class="job-card-title" style="font-weight:600; font-size:0.9rem; color:var(--ui-text-title); margin-bottom:0.2rem;">${job.jobTitle || 'Untitled Role'}</div>
+            <div class="job-card-subtitle" style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; font-size:0.75rem; color:var(--ui-text-muted);">
+                <span class="job-card-company" style="font-weight:500;">${job.companyName || 'Unknown Company'}</span>
+                <span class="job-status-badge ${job.status.toLowerCase()}" style="font-size:0.65rem; padding:1px 4px; border-radius:4px;">${job.status}</span>
                 <span class="job-card-date">${formattedDate}</span>
-            </div>
-            <div style="margin-top:0.4rem; display:flex; justify-content:space-between;">
                 ${customizeIndicator}
             </div>
         `;
@@ -1119,13 +1124,13 @@ DOM.btnNewJob.addEventListener('click', async () => {
         extractedKeywords: [],
         status: 'Draft',
         notes: '',
-        createdDate: new Date()
+        createdDate: new Date().toISOString()
     };
-    const id = await db.jobDescriptions.add(newJob);
+    const id = await addJob(newJob);
     activeJobId = id;
     await loadJobsList();
     
-    const job = await db.jobDescriptions.get(id);
+    const job = await getJob(id);
     await selectActiveJob(job);
 });
 
@@ -1154,7 +1159,32 @@ async function selectActiveJob(job) {
     DOM.jobInputStatus.value = job.status;
     DOM.jobInputUrl.value = job.jdUrl;
     DOM.jobInputText.value = job.rawJdText;
-    DOM.jobInputNotes.value = job.notes;
+    DOM.jobInputNotes.value = job.notes || '';
+
+    // Populate Match Optimizer values from SQLite
+    DOM.jdScoreBadge.innerText = `${job.matchScore !== undefined && job.matchScore !== null ? job.matchScore : 0}% Match`;
+    DOM.statMatches.innerText = job.matchedKeywords ? job.matchedKeywords.length : 0;
+    DOM.statMissing.innerText = job.missingKeywords ? job.missingKeywords.length : 0;
+
+    DOM.tagsMatched.innerHTML = job.matchedKeywords && job.matchedKeywords.length > 0
+        ? job.matchedKeywords.map(tag => `<span class="keyword-tag matched">${tag}</span>`).join('')
+        : '<span class="help-text">None detected.</span>';
+
+    DOM.tagsMissing.innerHTML = job.missingKeywords && job.missingKeywords.length > 0
+        ? job.missingKeywords.map(tag => `<span class="keyword-tag missing">${tag}</span>`).join('')
+        : '<span class="help-text">Perfect keyword match!</span>';
+
+    if (job.aiSuggestions && job.aiSuggestions.length > 0) {
+        DOM.aiSuggestionsContainer.classList.remove('hidden');
+        DOM.aiSuggestionsList.innerHTML = job.aiSuggestions.map(s => `
+            <div class="ai-suggestion-card">
+                <p>${s}</p>
+            </div>
+        `).join('');
+    } else {
+        DOM.aiSuggestionsContainer.classList.add('hidden');
+        DOM.aiSuggestionsList.innerHTML = '<div class="help-text">No recommendations.</div>';
+    }
     
     // Bind Job input triggers.
     // IMPORTANT: we clone each element to strip old event listeners when switching jobs.
@@ -1172,11 +1202,11 @@ async function selectActiveJob(job) {
             if (field === 'jobTitle' || field === 'companyName' || field === 'status') {
                 await loadJobsList();
             }
-            await db.jobDescriptions.update(job.id, job);
+            await updateJob(job.id, job);
             if (field === 'rawJdText') {
                 // Extract keywords dynamically on typing JD
                 job.extractedKeywords = extractKeywords(e.target.value);
-                await db.jobDescriptions.update(job.id, job);
+                await updateJob(job.id, job);
                 triggerKeywordAnalysis();
             }
         });
@@ -1196,7 +1226,7 @@ async function selectActiveJob(job) {
     textClone.addEventListener('input', async (e) => {
         job.rawJdText = e.target.value;
         job.extractedKeywords = extractKeywords(e.target.value);
-        await db.jobDescriptions.update(job.id, job);
+        await updateJob(job.id, job);
         triggerKeywordAnalysis();
     });
 
@@ -1221,7 +1251,7 @@ async function selectActiveJob(job) {
     DOM.inputClWords = wordsClone;
     wordsClone.addEventListener('change', async (e) => {
         job.targetCoverLetterWordCount = parseInt(e.target.value) || 300;
-        await db.jobDescriptions.update(job.id, job);
+        await updateJob(job.id, job);
     });
 
     // Bind Cover Letter text changes (with cloning to strip old event listeners)
@@ -1230,7 +1260,7 @@ async function selectActiveJob(job) {
     DOM.coverLetterOutput = clOutputClone;
     clOutputClone.addEventListener('input', async (e) => {
         job.generatedCoverLetter = e.target.value;
-        await db.jobDescriptions.update(job.id, job);
+        await updateJob(job.id, job);
     });
 
     // Bind Cover Letter Copy button (with cloning to strip old event listeners)
@@ -1290,7 +1320,7 @@ async function selectActiveJob(job) {
             const result = await generateCoverLetterLLM(activeResume, title, company, jdText, wordCount, config);
             DOM.coverLetterOutput.value = result;
             job.generatedCoverLetter = result;
-            await db.jobDescriptions.update(job.id, job);
+            await updateJob(job.id, job);
             
             DOM.coverLetterOutputWrapper.classList.remove('hidden');
         } catch (err) {
@@ -1315,8 +1345,8 @@ DOM.btnDeleteJob.addEventListener('click', async () => {
     if (activeJobId) {
         if (confirm('Are you sure you want to delete this job application? This will also remove any tailored resumes linked to it.')) {
             // Delete tailored snapshot if exists
-            await db.tailoredResumes.where('jobId').equals(activeJobId).delete();
-            await db.jobDescriptions.delete(activeJobId);
+            await deleteTailoredResume(activeJobId);
+            await deleteJob(activeJobId);
             
             activeJobId = null;
             isTailoredMode = false;
@@ -1382,12 +1412,12 @@ DOM.btnScrapeJd.addEventListener('click', async () => {
             textInput.dispatchEvent(new Event('input'));
             
             // Update DB with details
-            const job = await db.jobDescriptions.get(activeJobId);
+            const job = await getJob(activeJobId);
             if (job) {
                 job.rawJdText = data.text;
                 job.jdUrl = url;
                 job.extractedKeywords = extractKeywords(data.text);
-                await db.jobDescriptions.update(activeJobId, job);
+                await updateJob(activeJobId, job);
             }
             
             triggerKeywordAnalysis();
@@ -1414,7 +1444,7 @@ DOM.btnScrapeJd.addEventListener('click', async () => {
    ========================================================================== */
 
 async function refreshTailorBanner(jobId) {
-    const tailored = await db.tailoredResumes.where('jobId').equals(jobId).first();
+    const tailored = await getTailoredResume(jobId);
     
     // Setup listeners on buttons
     const wireBtn = (btn, action) => {
@@ -1498,10 +1528,10 @@ async function refreshTailorBanner(jobId) {
             const newTailored = {
                 jobId: jobId,
                 resumeSnapshot: JSON.parse(JSON.stringify(master)), // Deep clone master
-                createdAt: new Date()
+                createdAt: new Date().toISOString()
             };
             
-            await db.tailoredResumes.add(newTailored);
+            await saveTailoredResume(newTailored);
             alert('Customized copy created! Click "Edit Customized Resume" to modify details for this job.');
             await refreshTailorBanner(jobId);
             
@@ -1512,7 +1542,7 @@ async function refreshTailorBanner(jobId) {
 
     wireBtn(DOM.btnResetTailored, async () => {
         if (confirm('Are you sure you want to delete this custom version? All customizations for this job will be lost and reverted to your Master resume.')) {
-            await db.tailoredResumes.where('jobId').equals(jobId).delete();
+            await deleteTailoredResume(jobId);
             isTailoredMode = false;
             currentTailoredRecord = null;
             
@@ -1552,12 +1582,12 @@ async function triggerKeywordAnalysis() {
         return;
     }
     
-    const job = await db.jobDescriptions.get(activeJobId);
+    const job = await getJob(activeJobId);
     if (!job || !job.rawJdText) {
         DOM.jdScoreBadge.innerText = '0% Match';
         DOM.statMatches.innerText = '0';
         DOM.statMissing.innerText = '0';
-        DOM.tagsMatched.innerHTML = `<p class="help-text" style="grid-column: span 2;">Paste JD or click scrape to analyze keywords.</p>`;
+        DOM.tagsMatched.innerHTML = '';
         DOM.tagsMissing.innerHTML = '';
         DOM.aiSuggestionsContainer.classList.add('hidden');
         return;
@@ -1570,7 +1600,7 @@ async function triggerKeywordAnalysis() {
         // Run regex analysis
         if (!job.extractedKeywords || job.extractedKeywords.length === 0) {
             job.extractedKeywords = extractKeywords(job.rawJdText);
-            await db.jobDescriptions.update(job.id, job);
+            await updateJob(job.id, job);
         }
         
         const analysis = analyzeMatch(activeResume, job.extractedKeywords);
@@ -1586,6 +1616,17 @@ async function triggerKeywordAnalysis() {
         DOM.tagsMissing.innerHTML = analysis.missing.map(tag => `
             <span class="keyword-tag missing">${tag}</span>
         `).join('') || '<span class="help-text">Perfect keyword match!</span>';
+
+        // Update database with local regex results
+        if (job.matchScore !== analysis.score || 
+            JSON.stringify(job.matchedKeywords) !== JSON.stringify(analysis.matched) ||
+            JSON.stringify(job.missingKeywords) !== JSON.stringify(analysis.missing)) {
+            job.matchScore = analysis.score;
+            job.matchedKeywords = analysis.matched;
+            job.missingKeywords = analysis.missing;
+            job.aiSuggestions = [];
+            await updateJob(job.id, job);
+        }
         
     } else if (matcherMode === 'llm') {
         if (aiProvider === 'gemini' && !geminiApiKey) {
@@ -1637,6 +1678,13 @@ async function triggerKeywordAnalysis() {
                     <p>${s}</p>
                 </div>
             `).join('') || '<div class="help-text">No recommendations.</div>';
+
+            // Save to DB
+            job.matchScore = analysis.score;
+            job.matchedKeywords = analysis.matched;
+            job.missingKeywords = analysis.missing;
+            job.aiSuggestions = analysis.suggestions;
+            await updateJob(job.id, job);
 
         } catch (err) {
             console.error('LLM match analysis error:', err);
@@ -1738,7 +1786,7 @@ function setupActionListeners() {
                 // Save link to DB against this tailored snapshot
                 currentTailoredRecord.gdriveFileId = result.fileId;
                 currentTailoredRecord.gdriveLink = result.webViewLink;
-                await db.tailoredResumes.put(currentTailoredRecord);
+                await saveTailoredResume(currentTailoredRecord);
             }
             
             alert(`Uploaded successfully to Google Drive!\nFile Link: ${result.webViewLink}`);
@@ -1785,7 +1833,7 @@ function setupActionListeners() {
                     // Save link to DB against this tailored snapshot
                     currentTailoredRecord.gdriveFileId = result.fileId;
                     currentTailoredRecord.gdriveLink = result.webViewLink;
-                    await db.tailoredResumes.put(currentTailoredRecord);
+                    await saveTailoredResume(currentTailoredRecord);
                 }
                 
                 alert(`Uploaded and converted successfully to Google Doc!\nFile Link: ${result.webViewLink}`);
@@ -2251,7 +2299,7 @@ function setupRewriteModalListeners() {
         
         let activeJd = '';
         if (activeJobId) {
-            const job = await db.jobDescriptions.get(activeJobId);
+            const job = await getJob(activeJobId);
             if (job) activeJd = job.rawJdText || '';
         }
 

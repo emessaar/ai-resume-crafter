@@ -936,7 +936,7 @@ a:hover {
 
 .preview-panel {
     flex: 1;
-    background-color: var(--preview-canvas-bg);
+    background-color: var(--ui-bg-panel);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -944,10 +944,10 @@ a:hover {
 }
 
 .preview-toolbar {
-    height: 60px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-    background-color: white;
-    padding: 0 1.5rem;
+    height: 48px;
+    border-bottom: 1px solid var(--ui-border-color);
+    background-color: var(--ui-bg-sidebar);
+    padding: 0 1rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -958,7 +958,7 @@ a:hover {
     display: flex;
     align-items: center;
     gap: 0.50rem;
-    color: #1e293b;
+    color: var(--ui-text-title);
 }
 .toolbar-title i {
     width: 18px;
@@ -978,15 +978,15 @@ a:hover {
 }
 
 .toolbar-actions .btn {
-    padding: 0.45rem 0.85rem;
-    font-size: 0.85rem;
-    color: #475569;
-    background-color: #f1f5f9;
-    border: 1px solid #e2e8f0;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
+    color: var(--ui-text-body);
+    background-color: var(--ui-bg-input);
+    border: 1px solid var(--ui-border-color);
 }
 .toolbar-actions .btn:hover {
-    background-color: #e2e8f0;
-    color: #0f172a;
+    background-color: var(--ui-bg-hover);
+    color: var(--ui-text-title);
 }
 .toolbar-actions .btn-accent {
     background: var(--ui-accent-gradient);
@@ -1376,10 +1376,19 @@ a:hover {
         background: white !important;
     }
 
-    /* Hide toolbar and keyword drawer — only show the sheet */
+    /* Hide toolbar, optimizer and keyword drawer — only show the sheet */
     .preview-toolbar,
+    #right-jd-panel,
     .keyword-drawer {
         display: none !important;
+    }
+
+    #right-preview-section {
+        display: block !important;
+        height: auto !important;
+        min-height: 0 !important;
+        border: none !important;
+        overflow: visible !important;
     }
 
     /* Make the preview workspace and sheet container layout-transparent */
@@ -1672,4 +1681,18 @@ a:hover {
 .collapsible-jd-section {
     border-bottom: 1px solid var(--ui-border-color);
     padding-bottom: 0.5rem;
+}
+
+/* Right Pane Live Preview Collapsible Section */
+#right-preview-section.collapsed {
+    height: 48px !important;
+    min-height: 48px !important;
+}
+
+#right-preview-section.collapsed #preview-collapse-chevron {
+    transform: rotate(-90deg);
+}
+
+#right-preview-section.collapsed #preview-workspace-body {
+    display: none !important;
 }
