@@ -14,4 +14,5 @@ Thumbs.db
 *.swo
 .venv/
 venv/
-
+*.db
+resumecrafter.db
