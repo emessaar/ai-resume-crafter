@@ -1524,7 +1524,9 @@ async function refreshTailorBanner(jobId) {
                 </div>
                 <button class="btn btn-secondary btn-sm" id="btn-alert-exit-tailor">Exit Custom Mode</button>
             `;
-            header.appendChild(bannerAlert);
+            const tabBase = document.getElementById('tab-base');
+            const tabBody = tabBase.querySelector('.tab-body');
+            tabBase.insertBefore(bannerAlert, tabBody);
             lucide.createIcons();
             
             document.getElementById('btn-alert-exit-tailor').addEventListener('click', async () => {
