@@ -1211,10 +1211,10 @@ async function selectActiveJob(job) {
         
         clone.addEventListener('input', async (e) => {
             job[field] = e.target.value;
+            await updateJob(job.id, job);
             if (field === 'jobTitle' || field === 'companyName' || field === 'status') {
                 await loadJobsList();
             }
-            await updateJob(job.id, job);
             if (field === 'rawJdText') {
                 // Extract keywords dynamically on typing JD
                 job.extractedKeywords = extractKeywords(e.target.value);
@@ -1238,8 +1238,12 @@ async function selectActiveJob(job) {
     textClone.addEventListener('input', async (e) => {
         job.rawJdText = e.target.value;
         job.extractedKeywords = extractKeywords(e.target.value);
+        job.matchScore = 0;
+        job.matchedKeywords = [];
+        job.missingKeywords = [];
+        job.aiSuggestions = [];
         await updateJob(job.id, job);
-        triggerKeywordAnalysis();
+        await triggerKeywordAnalysis();
     });
 
     // Make sure the JD collapsible container is expanded on job selection
@@ -1419,26 +1423,7 @@ DOM.btnScrapeJd.addEventListener('click', async () => {
         
         const data = await response.json();
         if (data.text) {
-            const textInput = document.getElementById('job-input-text') || DOM.jobInputText;
-            textInput.value = data.text;
-            textInput.dispatchEvent(new Event('input'));
-            
-            // Auto-populate Job Title and Company Name
-            let metaUpdated = false;
-            if (data.extractedJobTitle) {
-                const titleInput = document.getElementById('job-input-title') || DOM.jobInputTitle;
-                titleInput.value = data.extractedJobTitle;
-                titleInput.dispatchEvent(new Event('input'));
-                metaUpdated = true;
-            }
-            if (data.extractedCompany) {
-                const companyInput = document.getElementById('job-input-company') || DOM.jobInputCompany;
-                companyInput.value = data.extractedCompany;
-                companyInput.dispatchEvent(new Event('input'));
-                metaUpdated = true;
-            }
-            
-            // Update DB with details
+            // Update DB first
             const job = await getJob(activeJobId);
             if (job) {
                 job.rawJdText = data.text;
@@ -1446,14 +1431,36 @@ DOM.btnScrapeJd.addEventListener('click', async () => {
                 job.extractedKeywords = extractKeywords(data.text);
                 if (data.extractedJobTitle) job.jobTitle = data.extractedJobTitle;
                 if (data.extractedCompany) job.companyName = data.extractedCompany;
+                
+                // Clear any cached LLM match results as the JD content has changed
+                job.matchScore = 0;
+                job.matchedKeywords = [];
+                job.missingKeywords = [];
+                job.aiSuggestions = [];
+                
                 await updateJob(activeJobId, job);
             }
-            
-            if (metaUpdated) {
-                await loadJobsList();
+
+            // Assign input values directly in the DOM without dispatching 'input' events to avoid concurrent db writes
+            const textInput = document.getElementById('job-input-text') || DOM.jobInputText;
+            if (textInput) textInput.value = data.text;
+
+            const urlInput = document.getElementById('job-input-url') || DOM.jobInputUrl;
+            if (urlInput) urlInput.value = url;
+
+            if (data.extractedJobTitle) {
+                const titleInput = document.getElementById('job-input-title') || DOM.jobInputTitle;
+                if (titleInput) titleInput.value = data.extractedJobTitle;
+            }
+            if (data.extractedCompany) {
+                const companyInput = document.getElementById('job-input-company') || DOM.jobInputCompany;
+                if (companyInput) companyInput.value = data.extractedCompany;
             }
             
-            triggerKeywordAnalysis();
+            // Reload the jobs list sidebar to show the updated title and company
+            await loadJobsList();
+            
+            await triggerKeywordAnalysis();
             
             const wordCount = data.text.trim().split(/\s+/).filter(Boolean).length;
             if (wordCount < 25) {
@@ -1609,7 +1616,7 @@ function removeTailorAlert() {
    KEYWORD DETECTOR & ANALYSIS SCROLL
    ========================================================================== */
 
-async function triggerKeywordAnalysis() {
+async function triggerKeywordAnalysis(forceLlmRun = false) {
     if (!activeJobId) {
         DOM.jdScoreBadge.innerText = '0% Match';
         DOM.statMatches.innerText = '0';
@@ -1667,6 +1674,62 @@ async function triggerKeywordAnalysis() {
         }
         
     } else if (matcherMode === 'llm') {
+        // Load cached suggestions if they exist and forceLlmRun is false
+        if (!forceLlmRun && job.aiSuggestions && job.aiSuggestions.length > 0) {
+            DOM.jdScoreBadge.innerText = `${job.matchScore || 0}% Match`;
+            DOM.statMatches.innerText = (job.matchedKeywords || []).length;
+            DOM.statMissing.innerText = (job.missingKeywords || []).length;
+            
+            DOM.tagsMatched.innerHTML = (job.matchedKeywords || []).map(tag => `
+                <span class="keyword-tag matched">${tag}</span>
+            `).join('') || '<span class="help-text">None detected.</span>';
+            
+            DOM.tagsMissing.innerHTML = (job.missingKeywords || []).map(tag => `
+                <span class="keyword-tag missing">${tag}</span>
+            `).join('') || '<span class="help-text">Perfect keyword match!</span>';
+            
+            DOM.aiSuggestionsContainer.classList.remove('hidden');
+            DOM.aiSuggestionsList.innerHTML = job.aiSuggestions.map(s => `
+                <div class="ai-suggestion-card">
+                    <p>${s}</p>
+                </div>
+            `).join('') || '<div class="help-text">No recommendations.</div>';
+            
+            return;
+        }
+
+        // Fall back to local matching if no cached suggestions exist and forceLlmRun is false
+        if (!forceLlmRun) {
+            if (!job.extractedKeywords || job.extractedKeywords.length === 0) {
+                job.extractedKeywords = extractKeywords(job.rawJdText);
+                await updateJob(job.id, job);
+            }
+            
+            const analysis = analyzeMatch(activeResume, job.extractedKeywords);
+            
+            DOM.jdScoreBadge.innerText = `${analysis.score}% Match`;
+            DOM.statMatches.innerText = analysis.matched.length;
+            DOM.statMissing.innerText = analysis.missing.length;
+            
+            DOM.tagsMatched.innerHTML = analysis.matched.map(tag => `
+                <span class="keyword-tag matched">${tag}</span>
+            `).join('') || '<span class="help-text">None detected.</span>';
+            
+            DOM.tagsMissing.innerHTML = analysis.missing.map(tag => `
+                <span class="keyword-tag missing">${tag}</span>
+            `).join('') || '<span class="help-text">Perfect keyword match!</span>';
+
+            DOM.aiSuggestionsContainer.classList.remove('hidden');
+            DOM.aiSuggestionsList.innerHTML = `
+                <div class="ai-suggestion-card" style="border-left-color: var(--color-warning) !important; background-color: rgba(245, 158, 11, 0.05);">
+                    <p style="color:var(--color-warning); font-weight:600;"><i data-lucide="sparkles" style="width:14px;height:14px;vertical-align:middle;display:inline-block;"></i> AI Matcher Ready</p>
+                    <p style="margin-top:0.25rem; font-size:0.75rem;">AI analysis has not been run for this job yet. Click the <strong>AI Match</strong> button above to run the AI keyword matcher and get tailoring suggestions.</p>
+                </div>
+            `;
+            lucide.createIcons();
+            return;
+        }
+
         if (aiProvider === 'gemini' && !geminiApiKey) {
             runLocalFallback(job, "Configure your Gemini API Key in the Integrations tab to enable AI analysis.");
             return;
@@ -2199,7 +2262,7 @@ async function setupGeminiApi() {
         matcherMode = mode;
         await saveSetting('matcher_mode', mode);
         updateMatcherModeUI();
-        triggerKeywordAnalysis();
+        await triggerKeywordAnalysis(mode === 'llm');
     };
 
     DOM.btnModeLocal.addEventListener('click', () => setMode('local'));

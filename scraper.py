@@ -48,8 +48,10 @@ def extract_meta_from_title(title_text):
     if not title_text:
         return None, None
         
+    # Clean up common prefixes like "Job Application for " (case-insensitive)
+    title = re.sub(r'(?i)^\s*job\s+application\s+for\s+', '', title_text)
+    
     # Clean up title: remove trailing portal names (e.g. | LinkedIn, - Indeed, etc.)
-    title = title_text
     title = re.sub(r'(?i)\s*\|\s*(linkedin|indeed|glassdoor|ziprecruiter|workable|greenhouse|lever|simplihired|careerbuilder).*$', '', title)
     title = re.sub(r'(?i)\s*-\s*(indeed|glassdoor|ziprecruiter).*$', '', title)
     title = title.strip()
