@@ -1079,6 +1079,7 @@ async function loadJobsList() {
     for (const job of jobs) {
         const card = document.createElement('div');
         card.className = `job-card ${job.id === activeJobId ? 'active' : ''}`;
+        card.setAttribute('data-id', job.id);
         
         const formattedDate = new Date(job.createdDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         
@@ -1130,10 +1131,17 @@ DOM.btnNewJob.addEventListener('click', async () => {
 
 // Select active job
 async function selectActiveJob(job) {
+    activeJobId = job.id;
+
     // Highlight active card
     const cards = DOM.jobsContainer.querySelectorAll('.job-card');
-    cards.forEach((c, idx) => {
-        const matchId = (DOM.jobsContainer.children[idx] === c); // Simple selection logic
+    cards.forEach(c => {
+        const cardId = parseInt(c.getAttribute('data-id'));
+        if (cardId === job.id) {
+            c.classList.add('active');
+        } else {
+            c.classList.remove('active');
+        }
     });
     
     // Load job data into UI
@@ -1300,9 +1308,6 @@ async function selectActiveJob(job) {
     
     // Extract keywords on load
     triggerKeywordAnalysis();
-    
-    // Repaint sidebar list active item classes
-    await loadJobsList();
 }
 
 // Delete Active Job
