@@ -1000,6 +1000,7 @@ a:hover {
     color: var(--ui-text-body);
     background-color: var(--ui-bg-input);
     border: 1px solid var(--ui-border-color);
+    gap: 2px;
 }
 .toolbar-actions .btn:hover {
     background-color: var(--ui-bg-hover);
@@ -1743,4 +1744,14 @@ a:hover {
 
 #right-preview-section.collapsed #preview-workspace-body {
     display: none !important;
+}
+
+/* Export Badge styling */
+.export-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    margin-left: 2px;
+    vertical-align: super;
+    line-height: 1;
+    opacity: 0.85;
 }

@@ -397,9 +397,9 @@
                                                 <div id="cover-letter-output-wrapper" class="hidden" style="display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid var(--ui-border-color); padding-top: 1rem;">
                                                     <div style="display: flex; justify-content: space-between; align-items: center;">
                                                         <label style="font-size: 0.8rem; font-weight: 600; color: var(--ui-text-title); text-transform: uppercase; letter-spacing: 0.05em;">Generated Cover Letter</label>
-                                                        <button type="button" class="btn btn-secondary btn-sm btn-icon" id="btn-copy-cover-letter">
-                                                            <i data-lucide="copy"></i> Copy to Clipboard
-                                                        </button>
+                                                         <button type="button" class="btn btn-secondary btn-sm btn-icon" id="btn-copy-cover-letter" title="Copy to Clipboard">
+                                                             <i data-lucide="copy"></i> Copy
+                                                         </button>
                                                     </div>
                                                     <textarea id="cover-letter-output" class="form-textarea" rows="12" placeholder="Your generated cover letter will appear here..."></textarea>
                                                 </div>
@@ -714,7 +714,7 @@
                         
                         <!-- Export Actions -->
                         <button class="btn btn-icon btn-sm" id="btn-export-pdf" title="Export as PDF">
-                            <i data-lucide="file-text"></i>
+                            <i data-lucide="file-text"></i><sup class="export-badge">PDF</sup>
                         </button>
                         <button class="btn btn-icon btn-sm" id="btn-export-md" title="Export as Markdown">
                             <i data-lucide="file-code"></i>
@@ -723,7 +723,7 @@
                             <i data-lucide="braces"></i>
                         </button>
                         <button class="btn btn-accent btn-sm btn-icon" id="btn-sync-gdoc" title="Export as Google Doc to Google Drive" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;">
-                            <i data-lucide="file-text"></i>
+                            <i data-lucide="file-text"></i><sup class="export-badge">GDOC</sup>
                         </button>
                     </div>
                 </header>

@@ -1845,7 +1845,7 @@ function setupActionListeners() {
                 alert(`Google Doc Sync Failed: ${err.message}`);
             } finally {
                 DOM.btnSyncGdoc.disabled = false;
-                DOM.btnSyncGdoc.innerHTML = `<i data-lucide="file-text"></i>`;
+                DOM.btnSyncGdoc.innerHTML = `<i data-lucide="file-text"></i><sup class="export-badge">GDOC</sup>`;
                 lucide.createIcons();
             }
         });
