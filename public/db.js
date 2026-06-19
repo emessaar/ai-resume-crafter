@@ -1,27 +1,27 @@
 // Data-access helpers connecting the front-end to the SQLite Python server
 
 /**
- * Retrieve the master resume profile.
+ * Retrieve the base resume profile.
  */
-export async function getMasterResume() {
+export async function getBaseResume() {
     try {
-        const res = await fetch('/api/resume/master');
+        const res = await fetch('/api/resume/base');
         if (!res.ok) {
-            console.warn(`getMasterResume: server returned ${res.status}, using empty profile.`);
+            console.warn(`getBaseResume: server returned ${res.status}, using empty profile.`);
             return { id: null, personalInfo: {}, experience: [], education: [], projects: [], skills: [], certifications: [], summary: '' };
         }
         return await res.json();
     } catch (err) {
-        console.warn('getMasterResume: server unreachable, using empty profile.', err.message);
+        console.warn('getBaseResume: server unreachable, using empty profile.', err.message);
         return { id: null, personalInfo: {}, experience: [], education: [], projects: [], skills: [], certifications: [], summary: '' };
     }
 }
 
 /**
- * Save the master resume profile.
+ * Save the base resume profile.
  */
-export async function saveMasterResume(resumeData) {
-    const res = await fetch('/api/resume/master', {
+export async function saveBaseResume(resumeData) {
+    const res = await fetch('/api/resume/base', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -29,10 +29,14 @@ export async function saveMasterResume(resumeData) {
         body: JSON.stringify(resumeData)
     });
     if (!res.ok) {
-        throw new Error(`Failed to save master resume: ${res.statusText}`);
+        throw new Error(`Failed to save base resume: ${res.statusText}`);
     }
     return await res.json();
 }
+
+// Legacy exports for backwards compatibility
+export const getMasterResume = getBaseResume;
+export const saveMasterResume = saveBaseResume;
 
 /**
  * Retrieve a setting from localStorage (respects privacy boundary for keys/settings).

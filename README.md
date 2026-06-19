@@ -8,10 +8,10 @@ The application is built completely with vanilla front-end technologies (HTML, C
 
 ## Key Features
 
-*   **Master Resume & Auto-Save**: Real-time auto-saving as you type, storing personal details, experience lists, education histories, and key projects directly in your browser.
+*   **Base Resume & Auto-Save**: Real-time auto-saving as you type, storing personal details, experience lists, education histories, and key projects directly in your browser.
 *   **Job Tracker & Scraper**: Built-in scraper that runs through a lightweight local Python proxy to fetch, clean, and extract text and keywords from online job postings. Features an independently collapsible Job Description area to optimize workspace layout.
 *   **AI Cover Letter Generator**: Generate professional, targeted cover letters on-demand using the active LLM provider (Gemini or OpenAI Compatible backend) based on your resume profile and the job description, with customizable target word count constraints and a quick copy-to-clipboard tool.
-*   **Snapshot-Based Tailoring**: One-click cloning to fork your Master Resume into tailored, job-specific resume variants. Edit a tailored resume safely without altering your master file.
+*   **Snapshot-Based Tailoring**: One-click cloning to fork your Base Resume into tailored, job-specific resume variants. Edit a tailored resume safely without altering your base file.
 *   **Rich Typography Customization**: Select fonts (Outfit, Inter, Roboto), line-heights, custom margin spacing, template colors, and reorder document sections dynamically.
 *   **Inline Markdown Toolbars**: Select any segment of text in experience, education, or project descriptions to quickly format using **Bold**, *Italic*, or `• Bullet lists` with immediate layout updates.
 *   **Inline ✨ AI Rewrite Modals**: Compare original and modified versions side-by-side. Instruct the LLM (e.g. *“Make this bullet point sound more result-oriented”*) to tailor summaries or bullet items to target job descriptions.

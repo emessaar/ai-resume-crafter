@@ -66,11 +66,14 @@ def init_db():
         )
     ''')
     
-    # Pre-populate Master Resume if missing
-    cursor.execute('SELECT id FROM resumes WHERE title = ?', ('Master Resume',))
+    # Rename any existing "Master Resume" to "Base Resume" for backward compatibility
+    cursor.execute('UPDATE resumes SET title = ? WHERE title = ?', ('Base Resume', 'Master Resume'))
+    
+    # Pre-populate Base Resume if missing
+    cursor.execute('SELECT id FROM resumes WHERE title = ?', ('Base Resume',))
     if not cursor.fetchone():
         default_resume = {
-            "title": "Master Resume",
+            "title": "Base Resume",
             "personalInfo": {
                 "fullName": "",
                 "email": "",
@@ -90,7 +93,7 @@ def init_db():
         }
         cursor.execute(
             'INSERT INTO resumes (title, data, updatedAt) VALUES (?, ?, ?)',
-            ('Master Resume', json.dumps(default_resume), '2026-06-18T00:00:00Z')
+            ('Base Resume', json.dumps(default_resume), '2026-06-18T00:00:00Z')
         )
     
     # 2. job_descriptions table
@@ -169,8 +172,8 @@ class ResumeBuilderRequestHandler(SimpleHTTPRequestHandler):
         
         if path == '/api/scrape':
             self.handle_scrape(parsed_url.query)
-        elif path == '/api/resume/master':
-            self.handle_get_master_resume()
+        elif path in ('/api/resume/master', '/api/resume/base'):
+            self.handle_get_base_resume()
         elif path == '/api/jobs':
             self.handle_get_jobs()
         elif path.startswith('/api/jobs/'):
@@ -184,8 +187,8 @@ class ResumeBuilderRequestHandler(SimpleHTTPRequestHandler):
         parsed_url = urllib.parse.urlparse(self.path)
         path = parsed_url.path.rstrip('/')
         
-        if path == '/api/resume/master':
-            self.handle_post_master_resume()
+        if path in ('/api/resume/master', '/api/resume/base'):
+            self.handle_post_base_resume()
         elif path == '/api/jobs':
             self.handle_post_job()
         elif path == '/api/tailored-resumes':
@@ -243,24 +246,24 @@ class ResumeBuilderRequestHandler(SimpleHTTPRequestHandler):
 
     # --- API Request Handlers ---
 
-    def handle_get_master_resume(self):
+    def handle_get_base_resume(self):
         try:
             conn = get_db_connection()
-            row = conn.execute('SELECT data FROM resumes WHERE title = ?', ('Master Resume',)).fetchone()
+            row = conn.execute('SELECT data FROM resumes WHERE title = ?', ('Base Resume',)).fetchone()
             conn.close()
             if row:
                 self.send_json_response(200, json.loads(row['data']))
             else:
-                self.send_error_json(404, "Master Resume not found.")
+                self.send_error_json(404, "Base Resume not found.")
         except Exception as e:
             self.send_error_json(500, str(e))
 
-    def handle_post_master_resume(self):
+    def handle_post_base_resume(self):
         try:
             body = self.get_json_body()
             conn = get_db_connection()
             conn.execute('UPDATE resumes SET data = ?, updatedAt = ? WHERE title = ?', 
-                         (json.dumps(body), body.get('updatedAt', ''), 'Master Resume'))
+                         (json.dumps(body), body.get('updatedAt', ''), 'Base Resume'))
             conn.commit()
             conn.close()
             self.send_json_response(200, {"success": True})

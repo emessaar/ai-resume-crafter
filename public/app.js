@@ -1,6 +1,6 @@
 import { 
-    getMasterResume, 
-    saveMasterResume, 
+    getBaseResume, 
+    saveBaseResume, 
     getSetting, 
     saveSetting,
     getJobs,
@@ -34,8 +34,8 @@ import {
 } from './gdrive.js';
 
 // State Variables
-let activeResume = null;          // Holds active resume data being edited (master or tailored snapshot)
-let masterResumeId = null;        // Holds the primary ID of the master resume
+let activeResume = null;          // Holds active resume data being edited (base or tailored snapshot)
+let baseResumeId = null;        // Holds the primary ID of the base resume
 let activeJobId = null;           // Database ID of selected job tracker item
 let isTailoredMode = false;       // True if editing a job-specific resume version
 let currentTailoredRecord = null; // Holds the active tailoredResume database entry
@@ -64,7 +64,7 @@ const DOM = {
     workspace: document.getElementById('app-workspace'),
     resizer: document.getElementById('workspace-preview-resizer'),
     
-    // Master Forms
+    // Base Forms
     inputFullName: document.getElementById('input-full-name'),
     inputEmail: document.getElementById('input-email'),
     inputPhone: document.getElementById('input-phone'),
@@ -208,11 +208,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 4. Load DB settings
     await loadSettings();
 
-    // 5. Load Master Resume
-    const master = await getMasterResume();
-    masterResumeId = master.id;
-    activeResume = master;
-    updatePageTitle(master.personalInfo?.fullName);
+    // 5. Load Base Resume
+    const base = await getBaseResume();
+    baseResumeId = base.id;
+    activeResume = base;
+    updatePageTitle(base.personalInfo?.fullName);
     
     // 6. Populate Editor Forms
     populateEditorForms();
@@ -1055,8 +1055,8 @@ async function saveActiveResume() {
         currentTailoredRecord.resumeSnapshot = activeResume;
         await saveTailoredResume(currentTailoredRecord);
     } else {
-        // Saving master
-        await saveMasterResume(activeResume);
+        // Saving base
+        await saveBaseResume(activeResume);
     }
 }
 
@@ -1364,9 +1364,9 @@ DOM.btnDeleteJob.addEventListener('click', async () => {
             isTailoredMode = false;
             currentTailoredRecord = null;
             
-            // Revert back to Master resume in editor
-            const master = await getMasterResume();
-            activeResume = master;
+            // Revert back to Base resume in editor
+            const base = await getBaseResume();
+            activeResume = base;
             populateEditorForms();
             renderExperienceList();
             renderEducationList();
@@ -1475,7 +1475,7 @@ async function refreshTailorBanner(jobId) {
         DOM.btnResetTailored.classList.remove('hidden');
         
         // Show status header in workspace editor
-        const header = document.querySelector('#tab-master .tab-header');
+        const header = document.querySelector('#tab-base .tab-header');
         
         // If not already editing tailored, let's wire actions
         wireBtn(DOM.btnEditTailored, async () => {
@@ -1509,8 +1509,8 @@ async function refreshTailorBanner(jobId) {
             document.getElementById('btn-alert-exit-tailor').addEventListener('click', async () => {
                 isTailoredMode = false;
                 currentTailoredRecord = null;
-                const master = await getMasterResume();
-                activeResume = master;
+                const base = await getBaseResume();
+                activeResume = base;
                 populateEditorForms();
                 renderExperienceList();
                 renderEducationList();
@@ -1521,8 +1521,8 @@ async function refreshTailorBanner(jobId) {
                 refreshPreviewSheet();
             });
 
-            // Redirect back to master tab so they see editing forms
-            document.getElementById('nav-btn-master').click();
+            // Redirect back to base tab so they see editing forms
+            document.getElementById('nav-btn-base').click();
             refreshPreviewSheet();
         });
     } else {
@@ -1535,11 +1535,11 @@ async function refreshTailorBanner(jobId) {
         removeTailorAlert();
         
         wireBtn(DOM.btnGenerateTailored, async () => {
-            // Create a tailored copy from master
-            const master = await getMasterResume();
+            // Create a tailored copy from base
+            const base = await getBaseResume();
             const newTailored = {
                 jobId: jobId,
-                resumeSnapshot: JSON.parse(JSON.stringify(master)), // Deep clone master
+                resumeSnapshot: JSON.parse(JSON.stringify(base)), // Deep clone base
                 createdAt: new Date().toISOString()
             };
             
@@ -1553,13 +1553,13 @@ async function refreshTailorBanner(jobId) {
     }
 
     wireBtn(DOM.btnResetTailored, async () => {
-        if (confirm('Are you sure you want to delete this custom version? All customizations for this job will be lost and reverted to your Master resume.')) {
+        if (confirm('Are you sure you want to delete this custom version? All customizations for this job will be lost and reverted to your Base resume.')) {
             await deleteTailoredResume(jobId);
             isTailoredMode = false;
             currentTailoredRecord = null;
             
-            const master = await getMasterResume();
-            activeResume = master;
+            const base = await getBaseResume();
+            activeResume = base;
             populateEditorForms();
             renderExperienceList();
             renderEducationList();
@@ -1825,8 +1825,8 @@ function setupActionListeners() {
         });
     }
 
-    // Profile Export — full master resume as named JSON
-    DOM.btnExportProfile.addEventListener('click', exportMasterProfile);
+    // Profile Export — full base resume as named JSON
+    DOM.btnExportProfile.addEventListener('click', exportBaseProfile);
 
     // Profile Import — trigger hidden file picker
     DOM.btnImportProfile.addEventListener('click', () => {
@@ -1837,7 +1837,7 @@ function setupActionListeners() {
     DOM.importProfileFile.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        await importMasterProfile(file);
+        await importBaseProfile(file);
     });
 }
 
@@ -1859,7 +1859,7 @@ function getExportFileName(extension) {
    PROFILE IMPORT / EXPORT
    ========================================================================== */
 
-function exportMasterProfile() {
+function exportBaseProfile() {
     if (!activeResume) {
         alert('No profile loaded to export.');
         return;
@@ -1892,7 +1892,7 @@ function exportMasterProfile() {
     }, 2000);
 }
 
-async function importMasterProfile(file) {
+async function importBaseProfile(file) {
     let parsed;
     try {
         const text = await file.text();
@@ -1914,7 +1914,7 @@ async function importMasterProfile(file) {
         `Import profile from "${file.name}"?\n\n` +
         `Name: ${parsed.personalInfo?.fullName || '(unnamed)'}\n` +
         `Exported: ${parsed._exportedAt ? new Date(parsed._exportedAt).toLocaleString() : 'unknown'}\n\n` +
-        `⚠️  This will overwrite your current master profile. Continue?`
+        `⚠️  This will overwrite your current base profile. Continue?`
     );
     if (!confirmed) return;
 
@@ -1922,14 +1922,14 @@ async function importMasterProfile(file) {
     const { _schemaVersion, _exportedAt, _appName, id, ...profileData } = parsed;
 
     try {
-        // Save to backend — saveMasterResume handles upsert
-        const saved = await saveMasterResume(profileData);
-        masterResumeId = saved.id ?? masterResumeId;
-        activeResume = { ...profileData, id: masterResumeId };
+        // Save to backend — saveBaseResume handles upsert
+        const saved = await saveBaseResume(profileData);
+        baseResumeId = saved.id ?? baseResumeId;
+        activeResume = { ...profileData, id: baseResumeId };
     } catch (err) {
         // If server is unavailable, apply in-memory and warn
-        console.warn('importMasterProfile: server save failed, applying in-memory only.', err.message);
-        activeResume = { ...profileData, id: masterResumeId };
+        console.warn('importBaseProfile: server save failed, applying in-memory only.', err.message);
+        activeResume = { ...profileData, id: baseResumeId };
     }
 
     // Reload all editor forms from the new data
