@@ -1813,7 +1813,7 @@ function setupActionListeners() {
             }
             
             DOM.btnSyncGdoc.disabled = true;
-            DOM.btnSyncGdoc.innerHTML = `<i data-lucide="loader" class="spinner"></i> Syncing...`;
+            DOM.btnSyncGdoc.innerHTML = `<i data-lucide="loader" class="spinner"></i>`;
             lucide.createIcons();
             
             try {
@@ -1845,7 +1845,7 @@ function setupActionListeners() {
                 alert(`Google Doc Sync Failed: ${err.message}`);
             } finally {
                 DOM.btnSyncGdoc.disabled = false;
-                DOM.btnSyncGdoc.innerHTML = `<i data-lucide="file-text"></i> <span>Sync Doc</span>`;
+                DOM.btnSyncGdoc.innerHTML = `<i data-lucide="file-text"></i>`;
                 lucide.createIcons();
             }
         });
@@ -1908,7 +1908,7 @@ function exportBaseProfile() {
     // Visual feedback
     const btn = DOM.btnExportProfile;
     const original = btn.innerHTML;
-    btn.innerHTML = '<i data-lucide="check"></i> <span>Exported!</span>';
+    btn.innerHTML = '<i data-lucide="check"></i>';
     btn.disabled = true;
     lucide.createIcons();
     setTimeout(() => {

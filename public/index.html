@@ -129,11 +129,9 @@
                     <div class="tab-header-actions">
                         <button class="btn btn-icon btn-sm" id="btn-import-profile" title="Import profile from JSON file">
                             <i data-lucide="upload"></i>
-                            <span>Import JSON</span>
                         </button>
                         <button class="btn btn-icon btn-sm" id="btn-export-profile" title="Export profile as JSON file">
                             <i data-lucide="download"></i>
-                            <span>Export JSON</span>
                         </button>
                         <!-- Hidden file input for import -->
                         <input type="file" id="import-profile-file" accept=".json,application/json" style="display: none;">
@@ -297,8 +295,8 @@
                         <div class="jobs-list-panel">
                             <div class="panel-section-header">
                                 <h3>Target Roles</h3>
-                                <button class="btn btn-primary btn-sm btn-icon" id="btn-new-job">
-                                    <i data-lucide="plus"></i> Add Job
+                                <button class="btn btn-primary btn-sm btn-icon" id="btn-new-job" title="Add Job">
+                                    <i data-lucide="plus"></i>
                                 </button>
                             </div>
                             <div class="jobs-list-cards" id="jobs-container">
@@ -316,8 +314,8 @@
 
                             <div class="job-detail-content hidden" id="job-detail-editor">
                                 <div class="job-detail-header-actions">
-                                    <button class="btn btn-danger btn-sm btn-icon" id="btn-delete-job">
-                                        <i data-lucide="trash-2"></i> Delete Job
+                                    <button class="btn btn-danger btn-sm btn-icon" id="btn-delete-job" title="Delete Job">
+                                        <i data-lucide="trash-2"></i>
                                     </button>
                                 </div>
                                 <div class="form-grid">
@@ -717,19 +715,15 @@
                         <!-- Export Actions -->
                         <button class="btn btn-icon btn-sm" id="btn-export-pdf" title="Export as PDF">
                             <i data-lucide="file-text"></i>
-                            <span>PDF</span>
                         </button>
                         <button class="btn btn-icon btn-sm" id="btn-export-md" title="Export as Markdown">
                             <i data-lucide="file-code"></i>
-                            <span>MD</span>
                         </button>
                         <button class="btn btn-icon btn-sm" id="btn-export-json" title="Export as JSON Resume">
                             <i data-lucide="braces"></i>
-                            <span>JSON</span>
                         </button>
                         <button class="btn btn-accent btn-sm btn-icon" id="btn-sync-gdoc" title="Export as Google Doc to Google Drive" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;">
                             <i data-lucide="file-text"></i>
-                            <span>Sync Doc</span>
                         </button>
                     </div>
                 </header>
