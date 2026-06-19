@@ -1540,6 +1540,9 @@ async function refreshTailorBanner(jobId) {
                 renderCertTags();
                 removeTailorAlert();
                 refreshPreviewSheet();
+                
+                // Redirect back to job applications tab
+                document.getElementById('nav-btn-jobs').click();
             });
 
             // Redirect back to base tab so they see editing forms
