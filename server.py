@@ -15,6 +15,9 @@ from fastapi.responses import JSONResponse
 from database import init_db, get_db_connection, deserialize_job, DB_FILE
 from scraper import scrape_url, URLError, HTTPError
 
+PORT = 8000
+PUBLIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public')
+
 # Create FastAPI app
 app = FastAPI(title="ResumeCrafter Server")
 
