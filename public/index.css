@@ -1748,10 +1748,21 @@ a:hover {
 
 /* Export Badge styling */
 .export-badge {
-    font-size: 0.6rem;
-    font-weight: 700;
-    margin-left: 2px;
-    vertical-align: super;
+    position: absolute;
+    font-size: 0.45rem;
+    font-weight: 800;
     line-height: 1;
-    opacity: 0.85;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+.toolbar-actions .btn {
+    position: relative;
+}
+
+.toolbar-actions .btn i.shifted {
+    transform: translateY(-5px);
 }
