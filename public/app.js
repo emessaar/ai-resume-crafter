@@ -115,6 +115,7 @@ const DOM = {
     btnGenerateCoverLetter: document.getElementById('btn-generate-cover-letter'),
     coverLetterOutputWrapper: document.getElementById('cover-letter-output-wrapper'),
     btnCopyCoverLetter: document.getElementById('btn-copy-cover-letter'),
+    btnExportCoverLetterPdf: document.getElementById('btn-export-cover-letter-pdf'),
     coverLetterOutput: document.getElementById('cover-letter-output'),
     
     // Tailoring banners
@@ -1299,6 +1300,83 @@ async function selectActiveJob(job) {
             console.error('Clipboard copy failed:', err);
             alert('Failed to copy to clipboard.');
         }
+    });
+
+    // Bind Cover Letter PDF Export button (with cloning to strip old event listeners)
+    const pdfClone = DOM.btnExportCoverLetterPdf.cloneNode(true);
+    DOM.btnExportCoverLetterPdf.parentNode.replaceChild(pdfClone, DOM.btnExportCoverLetterPdf);
+    DOM.btnExportCoverLetterPdf = pdfClone;
+    pdfClone.addEventListener('click', () => {
+        const coverLetterText = DOM.coverLetterOutput.value.trim();
+        if (!coverLetterText) {
+            alert('No cover letter text to export.');
+            return;
+        }
+
+        // Save original resume sheet content and class
+        const originalHtml = DOM.resumeSheet.innerHTML;
+        const originalClass = DOM.resumeSheet.className;
+
+        // Compile Cover Letter HTML using active resume personal details
+        const name = (activeResume?.personalInfo?.fullName || 'Candidate').trim();
+        const email = activeResume?.personalInfo?.email || '';
+        const phone = activeResume?.personalInfo?.phone || '';
+        const loc = activeResume?.personalInfo?.location || '';
+        const web = activeResume?.personalInfo?.website || '';
+        const linkedin = activeResume?.personalInfo?.linkedin || '';
+
+        const coverLetterHtml = `
+            <div class="cover-letter-print-container" style="padding: var(--style-margin, 0.75in); min-height: 100%; box-sizing: border-box; background: white; text-align: left; font-family: var(--style-font, 'Inter', sans-serif); color: var(--style-color-text, #1f2937); font-size: var(--style-fontsize, 11pt); line-height: var(--style-lineheight, 1.4);">
+                <!-- Header block matching resume template typography & accent colors -->
+                <div class="cover-letter-header" style="text-align: center; margin-bottom: 2.5rem; border-bottom: 2px solid var(--style-color-primary, #374151); padding-bottom: 1.5rem;">
+                    <h1 style="font-size: 2.25rem; font-weight: 700; margin: 0 0 0.5rem 0; font-family: 'Outfit', sans-serif; color: var(--style-color-primary, #374151);">${name}</h1>
+                    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.85rem; color: #4b5563;">
+                        ${email ? `<span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="mail" style="width:12px;height:12px;"></i>${email}</span>` : ''}
+                        ${phone ? `<span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="phone" style="width:12px;height:12px;"></i>${phone}</span>` : ''}
+                        ${loc ? `<span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="map-pin" style="width:12px;height:12px;"></i>${loc}</span>` : ''}
+                        ${web ? `<span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="globe" style="width:12px;height:12px;"></i>${web}</span>` : ''}
+                        ${linkedin ? `<span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="linkedin" style="width:12px;height:12px;"></i>${linkedin}</span>` : ''}
+                    </div>
+                </div>
+                
+                <!-- Date & Body -->
+                <div class="cover-letter-body">
+                    <div style="margin-bottom: 1.5rem; font-weight: 500; color: #4b5563;">
+                        ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </div>
+                    <div class="cl-markdown-content">
+                        ${window.marked ? window.marked.parse(coverLetterText) : coverLetterText}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Temporarily put the cover letter HTML and layout class in the sheet
+        DOM.resumeSheet.className = 'resume-sheet cover-letter-print';
+        DOM.resumeSheet.innerHTML = coverLetterHtml;
+
+        // Render lucide icons inside cover letter header
+        lucide.createIcons();
+
+        // Print filename title setup
+        const origTitle = document.title;
+        let printTitle = `Cover Letter – ${name}`;
+        const comp = (document.getElementById('job-input-company') || DOM.jobInputCompany)?.value?.trim();
+        if (comp) printTitle = `Cover Letter – ${name} – ${comp}`;
+        document.title = printTitle;
+
+        // Restore everything after print
+        const restoreAll = () => {
+            DOM.resumeSheet.className = originalClass;
+            DOM.resumeSheet.innerHTML = originalHtml;
+            document.title = origTitle;
+            lucide.createIcons();
+            window.removeEventListener('afterprint', restoreAll);
+        };
+        window.addEventListener('afterprint', restoreAll);
+
+        // Open print dialog
+        window.print();
     });
 
     // Bind Cover Letter Generate button (with cloning to strip old event listeners)

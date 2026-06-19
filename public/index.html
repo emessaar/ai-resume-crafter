@@ -397,9 +397,14 @@
                                                 <div id="cover-letter-output-wrapper" class="hidden" style="display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid var(--ui-border-color); padding-top: 1rem;">
                                                     <div style="display: flex; justify-content: space-between; align-items: center;">
                                                         <label style="font-size: 0.8rem; font-weight: 600; color: var(--ui-text-title); text-transform: uppercase; letter-spacing: 0.05em;">Generated Cover Letter</label>
-                                                         <button type="button" class="btn btn-secondary btn-sm btn-icon" id="btn-copy-cover-letter" title="Copy to Clipboard">
-                                                             <i data-lucide="copy"></i> Copy
-                                                         </button>
+                                                         <div style="display: flex; gap: 0.5rem;">
+                                                             <button type="button" class="btn btn-secondary btn-sm btn-icon" id="btn-copy-cover-letter" title="Copy to Clipboard">
+                                                                 <i data-lucide="copy"></i> Copy
+                                                             </button>
+                                                             <button type="button" class="btn btn-primary btn-sm btn-icon" id="btn-export-cover-letter-pdf" title="Export Cover Letter to PDF">
+                                                                 <i data-lucide="file-text"></i> PDF
+                                                             </button>
+                                                         </div>
                                                     </div>
                                                     <textarea id="cover-letter-output" class="form-textarea" rows="12" placeholder="Your generated cover letter will appear here..."></textarea>
                                                 </div>
