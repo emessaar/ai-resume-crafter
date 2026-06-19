@@ -44,7 +44,7 @@ let templateStyles = null;        // Visual styling configuration variables
 let sectionOrdering = ['summary', 'experience', 'projects', 'education', 'skills', 'certifications'];
 let gdriveConnected = false;
 let geminiApiKey = '';
-let matcherMode = 'local';
+let matcherMode = 'llm';
 let isLlmRunning = false;
 let aiProvider = 'gemini';
 let litellmBaseUrl = 'http://localhost:4000/v1';
@@ -369,7 +369,7 @@ async function loadSettings() {
 
     toggleAiConfigSections(aiProvider);
 
-    matcherMode = await getSetting('matcher_mode', 'local');
+    matcherMode = await getSetting('matcher_mode', 'llm');
     updateMatcherModeUI();
 
     const orderStr = await getSetting('section_order', JSON.stringify(sectionOrdering));
