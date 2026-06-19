@@ -1657,3 +1657,19 @@ a:hover {
     border-top: 1px solid var(--ui-border-color);
     margin-top: 0.5rem;
 }
+
+/* Collapsible Job Description & Cover Letter Styles */
+.collapsible-content {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height var(--transition-speed) ease, opacity var(--transition-speed) ease;
+}
+.collapsible-content.expanded {
+    max-height: 500px;
+    opacity: 1;
+}
+.collapsible-jd-section {
+    border-bottom: 1px solid var(--ui-border-color);
+    padding-bottom: 0.5rem;
+}

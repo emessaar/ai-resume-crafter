@@ -560,3 +560,110 @@ You MUST return ONLY the rewritten text segment.
         return responseText.trim();
     }
 }
+
+/**
+ * Request LLM to generate a cover letter based on resume profile, job description, target company, title, and target word count.
+ */
+export async function generateCoverLetterLLM(resumeData, jobTitle, companyName, jdText, targetWordCount, config) {
+    const prompt = `You are a professional cover letter writer and career coach.
+Your task is to write a highly tailored cover letter based on the applicant's Resume Profile and the target Job Description (JD) at the specified company.
+
+Applicant Resume Profile JSON:
+${JSON.stringify(getCleanedResume(resumeData), null, 2)}
+
+Target Job details:
+- Job Title: ${jobTitle}
+- Company: ${companyName}
+- Job Description: ${jdText}
+
+Additional constraint:
+- Target Word Count: Around ${targetWordCount} words.
+
+Requirements:
+- Make it professional, persuasive, and custom-tailored to the requirements in the JD and the experience in the resume.
+- Highlight 2-3 key accomplishments from the resume that directly align with the job responsibilities/requirements.
+- You MUST return ONLY the cover letter body text.
+- Do NOT include any instructions, placeholders (like "[Date]" or "[Your Address]" - write generic placeholders if needed or omit addresses entirely, beginning directly with "Dear Hiring Manager," or "Dear ${companyName} Hiring Team,"), introductions, notes, or meta-commentary.
+- Keep the length close to the requested ${targetWordCount} words.
+`;
+
+    if (config.provider === 'litellm') {
+        const { baseUrl, model, apiKey } = config;
+        const cleanUrl = baseUrl || 'http://localhost:4000/v1';
+        const url = cleanUrl.endsWith('/') ? `${cleanUrl}chat/completions` : `${cleanUrl}/chat/completions`;
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        if (apiKey) {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                model: model || 'gpt-3.5-turbo',
+                messages: [
+                    { role: "system", content: "You are a professional cover letter writer. Respond only with the tailored cover letter text." },
+                    { role: "user", content: prompt }
+                ]
+            })
+        });
+
+        if (!response.ok) {
+            let errMsg = 'Failed to query LiteLLM API.';
+            try {
+                const err = await response.json();
+                errMsg = err.error?.message || err.message || errMsg;
+            } catch {}
+            throw new Error(errMsg);
+        }
+
+        const data = await response.json();
+        const responseText = data.choices?.[0]?.message?.content;
+        if (!responseText) {
+            throw new Error('Empty response from LiteLLM.');
+        }
+        return responseText.trim();
+    } else {
+        // Gemini
+        const apiKey = config.apiKey;
+        if (!apiKey) {
+            throw new Error('Missing Gemini API Key.');
+        }
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: prompt
+                    }]
+                }],
+                generationConfig: {
+                    // Standard text generation
+                }
+            })
+        });
+
+        if (!response.ok) {
+            let errMsg = 'Failed to query Gemini API.';
+            try {
+                const err = await response.json();
+                errMsg = err.error?.message || err.message || errMsg;
+            } catch {}
+            throw new Error(errMsg);
+        }
+
+        const data = await response.json();
+        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!responseText) {
+            throw new Error('Empty response from Gemini API.');
+        }
+        return responseText.trim();
+    }
+}
+

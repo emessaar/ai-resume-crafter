@@ -16,7 +16,8 @@ import {
     analyzeMatch,
     analyzeMatchLLM,
     testLLMConnection,
-    rewriteTextLLM
+    rewriteTextLLM,
+    generateCoverLetterLLM
 } from './parser.js';
 import { 
     initGoogleClient, 
@@ -94,6 +95,18 @@ const DOM = {
     btnScrapeJd: document.getElementById('btn-scrape-jd'),
     jobInputText: document.getElementById('job-input-text'),
     jobInputNotes: document.getElementById('job-input-notes'),
+    
+    // Collapsible JD Textarea elements
+    btnToggleJdTextarea: document.getElementById('btn-toggle-jd-textarea'),
+    jdTextareaChevron: document.getElementById('jd-textarea-chevron'),
+    jdTextareaContainer: document.getElementById('jd-textarea-container'),
+    
+    // Cover Letter elements
+    inputClWords: document.getElementById('input-cl-words'),
+    btnGenerateCoverLetter: document.getElementById('btn-generate-cover-letter'),
+    coverLetterOutputWrapper: document.getElementById('cover-letter-output-wrapper'),
+    btnCopyCoverLetter: document.getElementById('btn-copy-cover-letter'),
+    coverLetterOutput: document.getElementById('cover-letter-output'),
     
     // Tailoring banners
     btnGenerateTailored: document.getElementById('btn-generate-tailored'),
@@ -262,6 +275,20 @@ function setupNavigation() {
     DOM.btnToggleDrawer.addEventListener('click', () => {
         DOM.keywordPanel.classList.toggle('collapsed');
     });
+
+    // Independent Collapsible Job Description toggle
+    if (DOM.btnToggleJdTextarea && DOM.jdTextareaContainer && DOM.jdTextareaChevron) {
+        DOM.btnToggleJdTextarea.addEventListener('click', () => {
+            const isExpanded = DOM.jdTextareaContainer.classList.contains('expanded');
+            if (isExpanded) {
+                DOM.jdTextareaContainer.classList.remove('expanded');
+                DOM.jdTextareaChevron.style.transform = 'rotate(-90deg)';
+            } else {
+                DOM.jdTextareaContainer.classList.add('expanded');
+                DOM.jdTextareaChevron.style.transform = 'rotate(0deg)';
+            }
+        });
+    }
 }
 
 function setupAccordions() {
@@ -1163,6 +1190,109 @@ async function selectActiveJob(job) {
         job.extractedKeywords = extractKeywords(e.target.value);
         await db.jobDescriptions.update(job.id, job);
         triggerKeywordAnalysis();
+    });
+
+    // Make sure the JD collapsible container is expanded on job selection
+    if (DOM.jdTextareaContainer && DOM.jdTextareaChevron) {
+        DOM.jdTextareaContainer.classList.add('expanded');
+        DOM.jdTextareaChevron.style.transform = 'rotate(0deg)';
+    }
+
+    // Load Cover Letter preferences and values
+    DOM.inputClWords.value = job.targetCoverLetterWordCount || 300;
+    DOM.coverLetterOutput.value = job.generatedCoverLetter || '';
+    if (job.generatedCoverLetter) {
+        DOM.coverLetterOutputWrapper.classList.remove('hidden');
+    } else {
+        DOM.coverLetterOutputWrapper.classList.add('hidden');
+    }
+
+    // Bind Cl Words input changes (with cloning to strip old event listeners)
+    const wordsClone = DOM.inputClWords.cloneNode(true);
+    DOM.inputClWords.parentNode.replaceChild(wordsClone, DOM.inputClWords);
+    DOM.inputClWords = wordsClone;
+    wordsClone.addEventListener('change', async (e) => {
+        job.targetCoverLetterWordCount = parseInt(e.target.value) || 300;
+        await db.jobDescriptions.update(job.id, job);
+    });
+
+    // Bind Cover Letter text changes (with cloning to strip old event listeners)
+    const clOutputClone = DOM.coverLetterOutput.cloneNode(true);
+    DOM.coverLetterOutput.parentNode.replaceChild(clOutputClone, DOM.coverLetterOutput);
+    DOM.coverLetterOutput = clOutputClone;
+    clOutputClone.addEventListener('input', async (e) => {
+        job.generatedCoverLetter = e.target.value;
+        await db.jobDescriptions.update(job.id, job);
+    });
+
+    // Bind Cover Letter Copy button (with cloning to strip old event listeners)
+    const copyClone = DOM.btnCopyCoverLetter.cloneNode(true);
+    DOM.btnCopyCoverLetter.parentNode.replaceChild(copyClone, DOM.btnCopyCoverLetter);
+    DOM.btnCopyCoverLetter = copyClone;
+    copyClone.addEventListener('click', async () => {
+        const text = DOM.coverLetterOutput.value;
+        if (!text) return;
+        try {
+            await navigator.clipboard.writeText(text);
+            const originalText = copyClone.innerHTML;
+            copyClone.innerHTML = `<i data-lucide="check" style="width:14px; height:14px;"></i> Copied!`;
+            lucide.createIcons();
+            setTimeout(() => {
+                copyClone.innerHTML = originalText;
+                lucide.createIcons();
+            }, 1500);
+        } catch (err) {
+            console.error('Clipboard copy failed:', err);
+            alert('Failed to copy to clipboard.');
+        }
+    });
+
+    // Bind Cover Letter Generate button (with cloning to strip old event listeners)
+    const generateClone = DOM.btnGenerateCoverLetter.cloneNode(true);
+    DOM.btnGenerateCoverLetter.parentNode.replaceChild(generateClone, DOM.btnGenerateCoverLetter);
+    DOM.btnGenerateCoverLetter = generateClone;
+    generateClone.addEventListener('click', async () => {
+        // Validate LLM configs
+        if (aiProvider === 'gemini' && !geminiApiKey) {
+            alert('Please enter your Gemini API Key in the Integrations tab to enable cover letter generation.');
+            return;
+        }
+        if (aiProvider === 'litellm' && !litellmBaseUrl) {
+            alert('Please configure your API Base URL in the Integrations tab to enable cover letter generation.');
+            return;
+        }
+
+        const title = job.jobTitle || DOM.jobInputTitle.value || 'Untitled Job';
+        const company = job.companyName || DOM.jobInputCompany.value || 'Target Company';
+        const jdText = job.rawJdText || DOM.jobInputText.value || '';
+        const wordCount = parseInt(DOM.inputClWords.value) || 300;
+
+        generateClone.disabled = true;
+        generateClone.innerHTML = `<i data-lucide="loader" class="spinner" style="width:14px; height:14px;"></i> Generating cover letter...`;
+        lucide.createIcons();
+
+        try {
+            const config = {
+                provider: aiProvider,
+                apiKey: aiProvider === 'gemini' ? geminiApiKey : litellmApiKey,
+                baseUrl: litellmBaseUrl,
+                model: litellmModelName
+            };
+
+            const result = await generateCoverLetterLLM(activeResume, title, company, jdText, wordCount, config);
+            DOM.coverLetterOutput.value = result;
+            job.generatedCoverLetter = result;
+            await db.jobDescriptions.update(job.id, job);
+            
+            DOM.coverLetterOutputWrapper.classList.remove('hidden');
+        } catch (err) {
+            console.error('Cover letter generation error:', err);
+            alert(`Generation failed: ${err.message}`);
+        } finally {
+            generateClone.disabled = false;
+            generateClone.innerHTML = `<i data-lucide="sparkles" style="width:14px; height:14px;"></i> Generate Cover Letter`;
+            lucide.createIcons();
+        }
     });
 
     // Check tailored version linkage
