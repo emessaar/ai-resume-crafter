@@ -30,7 +30,6 @@ import {
     initGoogleClient, 
     requestGoogleLogin, 
     logoutGoogleDrive, 
-    uploadToGoogleDrive,
     uploadAsGoogleDoc
 } from './gdrive.js';
 
@@ -149,7 +148,6 @@ const DOM = {
     btnExportPdf: document.getElementById('btn-export-pdf'),
     btnExportMd: document.getElementById('btn-export-md'),
     btnExportJson: document.getElementById('btn-export-json'),
-    btnSyncGdrive: document.getElementById('btn-sync-gdrive'),
     btnSyncGdoc: document.getElementById('btn-sync-gdoc'),
 
     // Keyword Matcher
@@ -1767,43 +1765,6 @@ function setupActionListeners() {
         downloadFile(fileName, jsonText, 'application/json');
     });
     
-    // Gdrive Sync Action
-    DOM.btnSyncGdrive.addEventListener('click', async () => {
-        if (!gdriveConnected) {
-            alert('Google Drive is not linked. Please configure your Client ID in the Google Drive tab and login.');
-            document.getElementById('nav-btn-gdrive').click();
-            return;
-        }
-        
-        DOM.btnSyncGdrive.disabled = true;
-        DOM.btnSyncGdrive.innerHTML = `<i data-lucide="loader" class="spinner"></i> Syncing...`;
-        lucide.createIcons();
-        
-        try {
-            const mdText = generateMarkdown(activeResume);
-            const fileName = getExportFileName('.md');
-            
-            const result = await uploadToGoogleDrive(fileName, mdText, 'text/markdown');
-            
-            if (isTailoredMode && currentTailoredRecord) {
-                // Save link to DB against this tailored snapshot
-                currentTailoredRecord.gdriveFileId = result.fileId;
-                currentTailoredRecord.gdriveLink = result.webViewLink;
-                await saveTailoredResume(currentTailoredRecord);
-            }
-            
-            alert(`Uploaded successfully to Google Drive!\nFile Link: ${result.webViewLink}`);
-            
-            // Open drive link in a new tab
-            window.open(result.webViewLink, '_blank');
-        } catch (err) {
-            alert(`GDrive Sync Failed: ${err.message}`);
-        } finally {
-            DOM.btnSyncGdrive.disabled = false;
-            DOM.btnSyncGdrive.innerHTML = `<i data-lucide="cloud-upload"></i> <span>Sync MD</span>`;
-            lucide.createIcons();
-        }
-    });
 
     // Gdoc Sync Action
     if (DOM.btnSyncGdoc) {
