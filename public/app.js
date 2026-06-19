@@ -1423,13 +1423,34 @@ DOM.btnScrapeJd.addEventListener('click', async () => {
             textInput.value = data.text;
             textInput.dispatchEvent(new Event('input'));
             
+            // Auto-populate Job Title and Company Name
+            let metaUpdated = false;
+            if (data.extractedJobTitle) {
+                const titleInput = document.getElementById('job-input-title') || DOM.jobInputTitle;
+                titleInput.value = data.extractedJobTitle;
+                titleInput.dispatchEvent(new Event('input'));
+                metaUpdated = true;
+            }
+            if (data.extractedCompany) {
+                const companyInput = document.getElementById('job-input-company') || DOM.jobInputCompany;
+                companyInput.value = data.extractedCompany;
+                companyInput.dispatchEvent(new Event('input'));
+                metaUpdated = true;
+            }
+            
             // Update DB with details
             const job = await getJob(activeJobId);
             if (job) {
                 job.rawJdText = data.text;
                 job.jdUrl = url;
                 job.extractedKeywords = extractKeywords(data.text);
+                if (data.extractedJobTitle) job.jobTitle = data.extractedJobTitle;
+                if (data.extractedCompany) job.companyName = data.extractedCompany;
                 await updateJob(activeJobId, job);
+            }
+            
+            if (metaUpdated) {
+                await loadJobsList();
             }
             
             triggerKeywordAnalysis();
