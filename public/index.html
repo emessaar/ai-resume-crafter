@@ -707,6 +707,13 @@
                     </div>
                     
                     <div class="toolbar-actions" style="display: flex; align-items: center; gap: 0.5rem;" onclick="event.stopPropagation();">
+                        <!-- Select Template Dropdown -->
+                        <select id="preview-template-select" class="preview-template-select" title="Choose Resume Template">
+                            <option value="modern">Modern Professional</option>
+                            <option value="minimal">Minimalist Elegance</option>
+                            <option value="split">Split Columns (Left Bar)</option>
+                        </select>
+                        
                         <!-- Export Actions -->
                         <button class="btn btn-icon btn-sm" id="btn-export-pdf" title="Export as PDF">
                             <i data-lucide="file-text"></i>

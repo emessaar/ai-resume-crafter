@@ -124,6 +124,7 @@ const DOM = {
 
     // Template designer
     selectTemplate: document.getElementById('select-layout-template'),
+    previewTemplateSelect: document.getElementById('preview-template-select'),
     inputFontFamily: document.getElementById('input-style-font'),
     inputFontSize: document.getElementById('input-style-fontsize'),
     inputLineHeight: document.getElementById('input-style-lineheight'),
@@ -324,6 +325,9 @@ function setupAccordions() {
 async function loadSettings() {
     const templateId = await getSetting('active_template', 'modern');
     DOM.selectTemplate.value = templateId;
+    if (DOM.previewTemplateSelect) {
+        DOM.previewTemplateSelect.value = templateId;
+    }
 
     const font = await getSetting('style_font', 'Inter, sans-serif');
     DOM.inputFontFamily.value = font;
@@ -385,9 +389,11 @@ async function initializeTemplateStyles() {
         margins: DOM.inputMargins.value
     };
     
-    // Bind template design panels
-    DOM.selectTemplate.addEventListener('change', async (e) => {
-        const templateId = e.target.value;
+    const handleTemplateChange = async (templateId) => {
+        DOM.selectTemplate.value = templateId;
+        if (DOM.previewTemplateSelect) {
+            DOM.previewTemplateSelect.value = templateId;
+        }
         await saveSetting('active_template', templateId);
         
         // Auto apply defaults of template
@@ -417,7 +423,12 @@ async function initializeTemplateStyles() {
             await saveSetting('color_text', defaults.textColor);
         }
         refreshPreviewSheet();
-    });
+    };
+
+    DOM.selectTemplate.addEventListener('change', (e) => handleTemplateChange(e.target.value));
+    if (DOM.previewTemplateSelect) {
+        DOM.previewTemplateSelect.addEventListener('change', (e) => handleTemplateChange(e.target.value));
+    }
 
     const bindStyleProp = (element, pickerText, styleKey, dbKey) => {
         element.addEventListener('input', async (e) => {
