@@ -1,8 +1,8 @@
-# ResumeCrafter — Browser-Native Offline Resume Workspace
+# ResumeCrafter — Personal Resume & Job Application Workspace
 
-**ResumeCrafter** is a premium, browser-native, privacy-centric offline workspace for building, tailoring, and managing professional resumes. 
+**ResumeCrafter** is a premium, privacy-centric workspace for building, tailoring, and managing professional resumes. 
 
-The application is built completely with vanilla front-end technologies (HTML, CSS, JavaScript) and relies entirely on client-side browser storage (**IndexedDB** via **Dexie.js**) and direct client-side API integrations. No data, files, or API credentials are ever sent to a remote database server, making ResumeCrafter 100% private.
+The application is built with a vanilla frontend (HTML, CSS, JavaScript) served by a lightweight Python backend running a **FastAPI** REST API. Application data (resumes, job records, tailored snapshots, cover letters) is stored in a local, persistent **SQLite** database. Sensitive API keys and credentials reside exclusively in the client's browser **`localStorage`**, ensuring they never leave your device.
 
 ---
 
@@ -27,11 +27,12 @@ The application is built completely with vanilla front-end technologies (HTML, C
 
 ```mermaid
 graph TD
-    Browser[Web Browser client-side] --> |Local Writes| IndexedDB[(IndexedDB - Dexie.js)]
+    Browser[Web Browser client-side] --> |Local Keys/Settings| LocalStorage[(localStorage)]
+    Browser --> |API requests| PyServer[Python FastAPI Server server.py]
+    PyServer --> |SQLite operations| SQLite[(SQLite db resumecrafter.db)]
     Browser --> |Direct GET/POST| GeminiAPI[Google Gemini API]
     Browser --> |Direct GET/POST| OpenAICompatibleEndpoint[OpenAI Compatible Endpoint]
     Browser --> |Direct GET/POST| GoogleDrive[Google Drive API v3]
-    Browser --> |URL Scraper Requests| PyServer[Python Scrape Server server.py]
     PyServer --> |HTTP Get| ExternalJobPage[Job Board URL / ATS URL]
 ```
 
@@ -44,18 +45,22 @@ graph TD
     git clone https://github.com/your-username/resume-crafter.git
     cd resume-crafter
     ```
-2.  Start the lightweight Python local server:
+2.  Install dependencies:
+    ```bash
+    pip install fastapi uvicorn
+    ```
+3.  Start the Python FastAPI local backend server:
     ```bash
     python3 server.py
     ```
-3.  Open your browser and navigate to:
+4.  Open your browser and navigate to:
     [http://localhost:8000](http://localhost:8000)
 
 ---
 
 ## API & Credentials Configurations
 
-To respect user privacy, ResumeCrafter has zero backend servers. All credentials and configurations are set inside the **Integrations** tab and stored locally in your browser's IndexedDB.
+To respect user privacy, ResumeCrafter stores sensitive configurations and API credentials (like Gemini keys and Google Drive Client IDs) exclusively in your browser's **`localStorage`**. They are never saved to the backend database or transmitted anywhere other than direct, encrypted requests to the respective service providers (Google, OpenAI, etc.).
 
 ### 1. Google Gemini API (For AI Matches & Inline Rewrites)
 1.  Go to the **Integrations** tab.
