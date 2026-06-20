@@ -2,7 +2,7 @@
 
 **ResumeCrafter** is a premium, privacy-centric workspace for building, tailoring, and managing professional resumes. 
 
-The application is built with a vanilla frontend (HTML, CSS, JavaScript) served by a lightweight Python backend running a **FastAPI** REST API. Application data (resumes, job records, tailored snapshots, cover letters) is stored in a local, persistent **SQLite** database. Sensitive API keys and credentials reside exclusively in the client's browser **`localStorage`**, ensuring they never leave your device.
+The application is built with a vanilla frontend (HTML, CSS, JavaScript) served by a lightweight Python backend running a **FastAPI** REST API. Application data (resumes, job records, tailored snapshots, cover letters) is stored in a local, persistent **SQLite** database, and can optionally be exported and saved directly as Google Docs on Google Drive. Sensitive API keys and credentials reside exclusively in the client's browser **`localStorage`**, ensuring they never leave your device.
 
 ---
 
