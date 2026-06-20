@@ -1172,6 +1172,7 @@ async function selectActiveJob(job) {
     // Load job data into UI
     DOM.jobEmptyState.classList.add('hidden');
     DOM.jobEditorPanel.classList.remove('hidden');
+    DOM.jobEditorPanel.parentNode.classList.remove('empty-state');
     
     // Set UI values
     DOM.jobInputTitle.value = job.jobTitle;
@@ -1465,6 +1466,7 @@ DOM.btnDeleteJob.addEventListener('click', async () => {
             
             DOM.jobEmptyState.classList.remove('hidden');
             DOM.jobEditorPanel.classList.add('hidden');
+            DOM.jobEditorPanel.parentNode.classList.add('empty-state');
             
             await loadJobsList();
             refreshPreviewSheet();
