@@ -284,24 +284,36 @@
 
             <!-- VIEW 2: JOB TRACKER -->
             <section class="workspace-tab" id="tab-jobs">
-                <header class="tab-header">
-                    <h2>Job Applications & Resumes</h2>
-                    <p>Track target positions, import job descriptions, and tailor specific resume editions to fit.</p>
+                <header class="tab-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2>Job Applications & Resumes</h2>
+                        <p>Track target positions, import job descriptions, and tailor specific resume editions to fit.</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm btn-icon" id="btn-new-job" title="Add Job" style="display: flex; align-items: center; gap: 0.25rem; height: fit-content; padding: 0.4rem 0.8rem;">
+                        <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+                        <span>Add Job</span>
+                    </button>
                 </header>
                 
                 <div class="tab-body">
-                    <div class="jobs-layout">
-                        <!-- JOB TRACKER PANEL -->
-                        <div class="jobs-list-panel">
-                            <div class="panel-section-header">
-                                <h3>Target Roles</h3>
-                                <button class="btn btn-primary btn-sm btn-icon" id="btn-new-job" title="Add Job">
-                                    <i data-lucide="plus"></i>
-                                </button>
-                            </div>
-                            <div class="jobs-list-cards" id="jobs-container">
-                                <!-- Job cards will load here -->
-                            </div>
+                    <div class="jobs-layout-split">
+                        <!-- TOP HALF: Table of Jobs -->
+                        <div class="jobs-table-container">
+                            <table class="jobs-table">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: left;">Job Title</th>
+                                        <th style="text-align: left;">Company</th>
+                                        <th style="text-align: left; width: 120px;">Status</th>
+                                        <th style="text-align: left; width: 100px;">Date Added</th>
+                                        <th style="text-align: center; width: 80px;" title="Custom tailored resume snapshot exists">Resume</th>
+                                        <th style="text-align: center; width: 80px;" title="AI Cover letter generated">Cover Letter</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="jobs-container">
+                                    <!-- Table rows injected here dynamically -->
+                                </tbody>
+                            </table>
                         </div>
 
                         <!-- ACTIVE JOB DETAIL / EDITOR -->

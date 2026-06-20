@@ -1092,37 +1092,44 @@ async function loadJobsList() {
     const jobs = await getJobs();
     
     if (jobs.length === 0) {
-        DOM.jobsContainer.innerHTML = `<p class="help-text" style="text-align:center; padding:1rem;">No jobs registered yet.</p>`;
+        DOM.jobsContainer.innerHTML = `<tr><td colspan="6" class="help-text" style="text-align:center; padding:2rem;">No jobs registered yet. Click "Add Job" to start.</td></tr>`;
         return;
     }
     
     for (const job of jobs) {
-        const card = document.createElement('div');
-        card.className = `job-card ${job.id === activeJobId ? 'active' : ''}`;
-        card.setAttribute('data-id', job.id);
+        const row = document.createElement('tr');
+        row.className = `jobs-table-row ${job.id === activeJobId ? 'active' : ''}`;
+        row.setAttribute('data-id', job.id);
         
-        const formattedDate = new Date(job.createdDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const formattedDate = new Date(job.createdDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         
         // Scan for customized status
         const tailored = await getTailoredResume(job.id);
-        const customizeIndicator = tailored ? `<span class="job-card-custom-indicator" style="font-size:0.7rem; color:var(--color-purple); font-weight:600; display:flex; align-items:center; gap:2px;"><i data-lucide="file-signature" style="width:10px;height:10px;"></i>Custom</span>` : '';
+        const resumeIconHtml = tailored 
+            ? `<i data-lucide="file-signature" style="width:16px; height:16px; color:var(--color-purple);" title="Tailored Resume snapshot exists"></i>`
+            : `<i data-lucide="file" style="width:16px; height:16px; color:var(--ui-text-muted); opacity:0.25;" title="No tailored resume snapshot"></i>`;
+            
+        // Scan for cover letter status
+        const hasCoverLetter = !!job.generatedCoverLetter && job.generatedCoverLetter.trim().length > 0;
+        const clIconHtml = hasCoverLetter
+            ? `<i data-lucide="mail" style="width:16px; height:16px; color:var(--color-indigo);" title="Cover Letter generated"></i>`
+            : `<i data-lucide="mail" style="width:16px; height:16px; color:var(--ui-text-muted); opacity:0.25;" title="No cover letter generated"></i>`;
         
-        card.innerHTML = `
-            <div class="job-card-title" style="font-weight:600; font-size:0.9rem; color:var(--ui-text-title); margin-bottom:0.2rem;">${job.jobTitle || 'Untitled Role'}</div>
-            <div class="job-card-subtitle" style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; font-size:0.75rem; color:var(--ui-text-muted);">
-                <span class="job-card-company" style="font-weight:500;">${job.companyName || 'Unknown Company'}</span>
-                <span class="job-status-badge ${job.status.toLowerCase()}" style="font-size:0.65rem; padding:1px 4px; border-radius:4px;">${job.status}</span>
-                <span class="job-card-date">${formattedDate}</span>
-                ${customizeIndicator}
-            </div>
+        row.innerHTML = `
+            <td style="font-weight:600; color:var(--ui-text-title);">${job.jobTitle || 'Untitled Role'}</td>
+            <td>${job.companyName || 'Unknown Company'}</td>
+            <td><span class="job-status-badge ${job.status.toLowerCase()}">${job.status}</span></td>
+            <td>${formattedDate}</td>
+            <td style="text-align:center;"><div class="jobs-table-icon">${resumeIconHtml}</div></td>
+            <td style="text-align:center;"><div class="jobs-table-icon">${clIconHtml}</div></td>
         `;
         
-        card.addEventListener('click', async () => {
+        row.addEventListener('click', async () => {
             activeJobId = job.id;
             await selectActiveJob(job);
         });
         
-        DOM.jobsContainer.appendChild(card);
+        DOM.jobsContainer.appendChild(row);
     }
     lucide.createIcons();
 }
@@ -1151,14 +1158,14 @@ DOM.btnNewJob.addEventListener('click', async () => {
 async function selectActiveJob(job) {
     activeJobId = job.id;
 
-    // Highlight active card
-    const cards = DOM.jobsContainer.querySelectorAll('.job-card');
-    cards.forEach(c => {
-        const cardId = parseInt(c.getAttribute('data-id'));
-        if (cardId === job.id) {
-            c.classList.add('active');
+    // Highlight active row in the table
+    const rows = DOM.jobsContainer.querySelectorAll('.jobs-table-row');
+    rows.forEach(r => {
+        const rowId = parseInt(r.getAttribute('data-id'));
+        if (rowId === job.id) {
+            r.classList.add('active');
         } else {
-            c.classList.remove('active');
+            r.classList.remove('active');
         }
     });
     
