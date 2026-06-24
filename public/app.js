@@ -2163,11 +2163,26 @@ function generateMarkdown(resumeData) {
         md += `## Professional Summary\n${personalInfo.summary}\n\n`;
     }
     
+    // Helper: format date range for markdown
+    const formatMdDateRange = (start, end, isCurrent) => {
+        const s = (start || '').trim();
+        const e = isCurrent ? 'Present' : (end || '').trim();
+        if (s && e) {
+            return `${s} - ${e}`;
+        } else if (s) {
+            return s;
+        } else if (e) {
+            return e;
+        }
+        return '';
+    };
+
     if (experience.length > 0) {
         md += `## Professional Experience\n\n`;
         experience.forEach(exp => {
-            const dates = `${exp.startDate} - ${exp.current ? 'Present' : exp.endDate}`;
-            md += `### ${exp.position} | ${exp.company} (${dates})\n`;
+            const dates = formatMdDateRange(exp.startDate, exp.endDate, exp.current);
+            const dateSuffix = dates ? ` (${dates})` : '';
+            md += `### ${exp.position} | ${exp.company}${dateSuffix}\n`;
             if (exp.location) md += `*Location: ${exp.location}*\n\n`;
             md += `${exp.description}\n\n`;
         });
@@ -2176,9 +2191,10 @@ function generateMarkdown(resumeData) {
     if (projects.length > 0) {
         md += `## Key Projects\n\n`;
         projects.forEach(proj => {
-            const dates = `${proj.startDate} - ${proj.endDate}`;
+            const dates = formatMdDateRange(proj.startDate, proj.endDate);
+            const dateSuffix = dates ? ` (${dates})` : '';
             const title = proj.link ? `[${proj.name}](${proj.link})` : proj.name;
-            md += `### ${title} | ${proj.role} (${dates})\n`;
+            md += `### ${title} | ${proj.role}${dateSuffix}\n`;
             if (proj.technologies && proj.technologies.length > 0) {
                 md += `*Technologies: ${proj.technologies.join(', ')}*\n\n`;
             }
@@ -2189,8 +2205,9 @@ function generateMarkdown(resumeData) {
     if (education.length > 0) {
         md += `## Education\n\n`;
         education.forEach(edu => {
-            const dates = `${edu.startDate} - ${edu.endDate}`;
-            md += `### ${edu.school} (${dates})\n`;
+            const dates = formatMdDateRange(edu.startDate, edu.endDate);
+            const dateSuffix = dates ? ` (${dates})` : '';
+            md += `### ${edu.school}${dateSuffix}\n`;
             md += `${edu.degree} in ${edu.fieldOfStudy}\n`;
             if (edu.location) md += `*Location: ${edu.location}*\n`;
             if (edu.description) md += `${edu.description}\n`;

@@ -87,6 +87,21 @@ export function compileResumeHtml(resumeData, templateId, sectionOrder = ['summa
         }
     };
 
+    // Helper: format date range nicely without stray hyphens
+    const formatDateRange = (start, end, isCurrent) => {
+        const formattedStart = formatDate(start);
+        const formattedEnd = isCurrent ? 'Present' : formatDate(end);
+        
+        if (formattedStart && formattedEnd) {
+            return `${formattedStart} – ${formattedEnd}`;
+        } else if (formattedStart) {
+            return formattedStart;
+        } else if (formattedEnd) {
+            return formattedEnd;
+        }
+        return '';
+    };
+
     // Sub-compilers for sections
     const renderHeader = () => `
         <div class="resume-preview-header">
@@ -129,7 +144,7 @@ export function compileResumeHtml(resumeData, templateId, sectionOrder = ['summa
                                 </div>
                                 <div class="resume-preview-item-sub">
                                     <span>${exp.position}</span>
-                                    <span>${formatDate(exp.startDate)} &ndash; ${exp.current ? 'Present' : formatDate(exp.endDate)}</span>
+                                    <span>${formatDateRange(exp.startDate, exp.endDate, exp.current)}</span>
                                 </div>
                                 <div class="resume-preview-item-desc">
                                     ${window.marked ? window.marked.parse(exp.description || '') : exp.description}
@@ -151,7 +166,7 @@ export function compileResumeHtml(resumeData, templateId, sectionOrder = ['summa
                                 </div>
                                 <div class="resume-preview-item-sub">
                                     <span>${edu.degree} in ${edu.fieldOfStudy}</span>
-                                    <span>${formatDate(edu.startDate)} &ndash; ${formatDate(edu.endDate)}</span>
+                                    <span>${formatDateRange(edu.startDate, edu.endDate)}</span>
                                 </div>
                                 ${edu.description ? `<div class="resume-preview-item-desc">${window.marked ? window.marked.parse(edu.description) : edu.description}</div>` : ''}
                             </div>
@@ -181,7 +196,7 @@ export function compileResumeHtml(resumeData, templateId, sectionOrder = ['summa
                                 </div>
                                 <div class="resume-preview-item-sub">
                                     <span>${proj.role || 'Contributor'}</span>
-                                    <span>${formatDate(proj.startDate)} &ndash; ${formatDate(proj.endDate)}</span>
+                                    <span>${formatDateRange(proj.startDate, proj.endDate)}</span>
                                 </div>
                                 <div class="resume-preview-item-desc">
                                     ${window.marked ? window.marked.parse(proj.description || '') : proj.description}
@@ -274,6 +289,21 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
         } catch {
             return dateStr;
         }
+    };
+
+    // Helper: format date range nicely without stray hyphens
+    const formatDateRange = (start, end, isCurrent) => {
+        const formattedStart = formatDate(start);
+        const formattedEnd = isCurrent ? 'Present' : formatDate(end);
+        
+        if (formattedStart && formattedEnd) {
+            return `${formattedStart} – ${formattedEnd}`;
+        } else if (formattedStart) {
+            return formattedStart;
+        } else if (formattedEnd) {
+            return formattedEnd;
+        }
+        return '';
     };
 
     const primaryColor = styles.primaryColor || '#111827';
@@ -373,7 +403,7 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
                                 <table style="width: 100%; border-collapse: collapse; border: none; font-family: ${fontFamily}; margin-bottom: 0.25rem;">
                                     <tr>
                                         <td style="text-align: left; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-weight: bold; font-style: italic; font-family: ${fontFamily};">${exp.position}</span></td>
-                                        <td style="text-align: right; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-style: italic; font-family: ${fontFamily};">${formatDate(exp.startDate)} &ndash; ${exp.current ? 'Present' : formatDate(exp.endDate)}</span></td>
+                                        <td style="text-align: right; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-style: italic; font-family: ${fontFamily};">${formatDateRange(exp.startDate, exp.endDate, exp.current)}</span></td>
                                     </tr>
                                 </table>
                                 <div class="resume-preview-item-desc" style="font-size: 10pt; line-height: ${lineHeight}; color: ${textColor}; font-family: ${fontFamily};">
@@ -402,7 +432,7 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
                                 <table style="width: 100%; border-collapse: collapse; border: none; font-family: ${fontFamily}; margin-bottom: 0.25rem;">
                                     <tr>
                                         <td style="text-align: left; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-weight: bold; font-style: italic; font-family: ${fontFamily};">${edu.degree} in ${edu.fieldOfStudy}</span></td>
-                                        <td style="text-align: right; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-style: italic; font-family: ${fontFamily};">${formatDate(edu.startDate)} &ndash; ${formatDate(edu.endDate)}</span></td>
+                                        <td style="text-align: right; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-style: italic; font-family: ${fontFamily};">${formatDateRange(edu.startDate, edu.endDate)}</span></td>
                                     </tr>
                                 </table>
                                 ${edu.description ? `<div class="resume-preview-item-desc" style="font-size: 10pt; line-height: ${lineHeight}; color: ${textColor}; font-family: ${fontFamily};">${parseMarkdown(edu.description)}</div>` : ''}
@@ -444,7 +474,7 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
                                 <table style="width: 100%; border-collapse: collapse; border: none; font-family: ${fontFamily}; margin-bottom: 0.25rem;">
                                     <tr>
                                         <td style="text-align: left; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-weight: bold; font-style: italic; font-family: ${fontFamily};">${proj.role || 'Contributor'}</span></td>
-                                        <td style="text-align: right; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-style: italic; font-family: ${fontFamily};">${formatDate(proj.startDate)} &ndash; ${formatDate(proj.endDate)}</span></td>
+                                        <td style="text-align: right; padding: 0;"><span style="color: ${textColor}; font-size: 10pt; font-style: italic; font-family: ${fontFamily};">${formatDateRange(proj.startDate, proj.endDate)}</span></td>
                                     </tr>
                                 </table>
                                 <div class="resume-preview-item-desc" style="font-size: 10pt; line-height: ${lineHeight}; color: ${textColor}; font-family: ${fontFamily};">
