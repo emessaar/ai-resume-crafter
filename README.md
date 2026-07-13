@@ -42,8 +42,8 @@ graph TD
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/your-username/resume-crafter.git
-    cd resume-crafter
+    git clone https://github.com/<your-username>/ai-resume-crafter.git
+    cd ai-resume-crafter
     ```
 2.  Install dependencies:
     ```bash
