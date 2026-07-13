@@ -41,7 +41,7 @@ graph TD
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/your-username/resume-crafter.git
+    git clone https://github.com/<your-username>/ai-resume-crafter.git
     cd resume-crafter
     ```
 2.  Start the lightweight Python local server:
