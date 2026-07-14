@@ -94,6 +94,9 @@ const DOM = {
     // Job Tracker Forms
     jobsContainer: document.getElementById('jobs-container'),
     btnNewJob: document.getElementById('btn-new-job'),
+    btnExportJobs: document.getElementById('btn-export-jobs'),
+    btnImportJobsTrigger: document.getElementById('btn-import-jobs-trigger'),
+    inputImportJobs: document.getElementById('input-import-jobs'),
     jobEmptyState: document.getElementById('job-detail-empty'),
     jobEditorPanel: document.getElementById('job-detail-editor'),
     btnDeleteJob: document.getElementById('btn-delete-job'),
@@ -1154,6 +1157,25 @@ DOM.btnNewJob.addEventListener('click', async () => {
     await selectActiveJob(job);
 });
 
+// Export Jobs Trigger
+if (DOM.btnExportJobs) {
+    DOM.btnExportJobs.addEventListener('click', exportJobs);
+}
+
+// Import Jobs Triggers
+if (DOM.btnImportJobsTrigger && DOM.inputImportJobs) {
+    DOM.btnImportJobsTrigger.addEventListener('click', () => {
+        DOM.inputImportJobs.value = ''; // reset so same file can be re-imported
+        DOM.inputImportJobs.click();
+    });
+
+    DOM.inputImportJobs.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        await importJobs(file);
+    });
+}
+
 // Select active job
 async function selectActiveJob(job) {
     activeJobId = job.id;
@@ -2129,6 +2151,179 @@ async function importBaseProfile(file) {
         btn.disabled = false;
         lucide.createIcons();
     }, 2500);
+}
+
+/* ==========================================================================
+   JOBS IMPORT / EXPORT
+   ========================================================================== */
+
+async function exportJobs() {
+    const btn = DOM.btnExportJobs;
+    if (!btn) return;
+    const original = btn.innerHTML;
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader" class="spinner" style="width: 14px; height: 14px;"></i>';
+        lucide.createIcons();
+
+        const jobs = await getJobs();
+        if (jobs.length === 0) {
+            alert('No jobs registered yet. There is nothing to export.');
+            return;
+        }
+
+        // Fetch tailored resume snapshots for each job to make it complete
+        const jobsWithResumes = [];
+        for (const job of jobs) {
+            let tailored = null;
+            try {
+                tailored = await getTailoredResume(job.id);
+            } catch (e) {
+                console.warn(`Failed to fetch tailored resume for job ${job.id}:`, e);
+            }
+            jobsWithResumes.push({
+                ...job,
+                tailoredResume: tailored ? {
+                    resumeSnapshot: tailored.resumeSnapshot,
+                    createdAt: tailored.createdAt
+                } : null
+            });
+        }
+
+        const payload = {
+            _schemaVersion: 1,
+            _exportedAt: new Date().toISOString(),
+            _appName: 'ResumeCrafter',
+            jobs: jobsWithResumes
+        };
+
+        const fileName = `resumecrafter_jobs_${new Date().toISOString().split('T')[0]}.json`;
+        downloadFile(fileName, JSON.stringify(payload, null, 2), 'application/json');
+
+        // Visual feedback on success
+        btn.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px;"></i>';
+    } catch (err) {
+        console.error('Export jobs failed:', err);
+        alert(`Export failed: ${err.message}`);
+    } finally {
+        setTimeout(() => {
+            btn.innerHTML = original;
+            btn.disabled = false;
+            lucide.createIcons();
+        }, 2000);
+    }
+}
+
+async function importJobs(file) {
+    let parsed;
+    try {
+        const text = await file.text();
+        parsed = JSON.parse(text);
+    } catch (err) {
+        alert(`Import failed: the file is not valid JSON.\n${err.message}`);
+        return;
+    }
+
+    // Support both an array of jobs directly or the schema wrap format
+    let jobsToImport = [];
+    if (parsed && Array.isArray(parsed.jobs)) {
+        jobsToImport = parsed.jobs;
+    } else if (Array.isArray(parsed)) {
+        jobsToImport = parsed;
+    } else if (parsed && typeof parsed === 'object') {
+        // If they imported a single job object
+        jobsToImport = [parsed];
+    }
+
+    if (jobsToImport.length === 0) {
+        alert('Import failed: no jobs found in the JSON file.');
+        return;
+    }
+
+    // Basic validation of keys on the first item
+    const firstJob = jobsToImport[0];
+    const hasJobKeys = firstJob && ('jobTitle' in firstJob || 'companyName' in firstJob || 'rawJdText' in firstJob);
+    if (!hasJobKeys) {
+        alert('Import failed: this JSON does not contain valid ResumeCrafter job objects.');
+        return;
+    }
+
+    const confirmed = confirm(
+        `Import jobs from "${file.name}"?\n\n` +
+        `Jobs found: ${jobsToImport.length}\n` +
+        `Exported: ${parsed._exportedAt ? new Date(parsed._exportedAt).toLocaleString() : 'unknown'}\n\n` +
+        `This will add these jobs to your list. Continue?`
+    );
+    if (!confirmed) return;
+
+    const btn = DOM.btnImportJobsTrigger;
+    const original = btn.innerHTML;
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader" class="spinner" style="width: 14px; height: 14px;"></i>';
+        lucide.createIcons();
+
+        let importCount = 0;
+        let errorCount = 0;
+
+        for (const jobData of jobsToImport) {
+            try {
+                // Build a clean job object (stripping internal ID fields to avoid conflict)
+                const cleanJob = {
+                    jobTitle: jobData.jobTitle || 'Imported Job Role',
+                    companyName: jobData.companyName || 'Imported Company',
+                    jdUrl: jobData.jdUrl || '',
+                    rawJdText: jobData.rawJdText || '',
+                    extractedKeywords: Array.isArray(jobData.extractedKeywords) ? jobData.extractedKeywords : [],
+                    status: jobData.status || 'Draft',
+                    notes: jobData.notes || '',
+                    createdDate: jobData.createdDate || new Date().toISOString(),
+                    matchScore: typeof jobData.matchScore === 'number' ? jobData.matchScore : null,
+                    matchedKeywords: Array.isArray(jobData.matchedKeywords) ? jobData.matchedKeywords : [],
+                    missingKeywords: Array.isArray(jobData.missingKeywords) ? jobData.missingKeywords : [],
+                    aiSuggestions: Array.isArray(jobData.aiSuggestions) ? jobData.aiSuggestions : [],
+                    generatedCoverLetter: jobData.generatedCoverLetter || '',
+                    targetCoverLetterWordCount: typeof jobData.targetCoverLetterWordCount === 'number' ? jobData.targetCoverLetterWordCount : 300
+                };
+
+                const newJobId = await addJob(cleanJob);
+
+                if (jobData.tailoredResume && typeof jobData.tailoredResume === 'object') {
+                    const tr = jobData.tailoredResume;
+                    if (tr.resumeSnapshot) {
+                        await saveTailoredResume({
+                            jobId: newJobId,
+                            resumeSnapshot: tr.resumeSnapshot,
+                            createdAt: tr.createdAt || new Date().toISOString()
+                        });
+                    }
+                }
+                importCount++;
+            } catch (err) {
+                console.error('Failed to import a job item:', jobData, err);
+                errorCount++;
+            }
+        }
+
+        btn.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px;"></i>';
+
+        if (errorCount > 0) {
+            alert(`Import completed with errors:\n\nSuccessfully imported: ${importCount} jobs\nFailed to import: ${errorCount} jobs`);
+        } else {
+            alert(`Successfully imported ${importCount} jobs!`);
+        }
+
+        await loadJobsList();
+    } catch (err) {
+        console.error('Import jobs failed:', err);
+        alert(`Import failed: ${err.message}`);
+    } finally {
+        setTimeout(() => {
+            btn.innerHTML = original;
+            btn.disabled = false;
+            lucide.createIcons();
+        }, 2000);
+    }
 }
 
 function downloadFile(filename, content, mimeType) {

@@ -289,10 +289,21 @@
                         <h2>Job Applications & Resumes</h2>
                         <p>Track target positions, import job descriptions, and tailor specific resume editions to fit.</p>
                     </div>
-                    <button class="btn btn-primary btn-sm btn-icon" id="btn-new-job" title="Add Job" style="display: flex; align-items: center; gap: 0.25rem; height: fit-content; padding: 0.4rem 0.8rem;">
-                        <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
-                        <span>Add Job</span>
-                    </button>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; height: fit-content;">
+                        <button class="btn btn-secondary btn-sm btn-icon" id="btn-export-jobs" title="Export Jobs as JSON" style="display: flex; align-items: center; gap: 0.25rem; padding: 0.4rem 0.8rem;">
+                            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                            <span>Export JSON</span>
+                        </button>
+                        <button class="btn btn-secondary btn-sm btn-icon" id="btn-import-jobs-trigger" title="Import Jobs from JSON" style="display: flex; align-items: center; gap: 0.25rem; padding: 0.4rem 0.8rem;">
+                            <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
+                            <span>Import JSON</span>
+                        </button>
+                        <input type="file" id="input-import-jobs" accept=".json" style="display: none;">
+                        <button class="btn btn-primary btn-sm btn-icon" id="btn-new-job" title="Add Job" style="display: flex; align-items: center; gap: 0.25rem; padding: 0.4rem 0.8rem;">
+                            <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+                            <span>Add Job</span>
+                        </button>
+                    </div>
                 </header>
                 
                 <div class="tab-body">
