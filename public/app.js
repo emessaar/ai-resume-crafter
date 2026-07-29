@@ -1289,7 +1289,7 @@ async function selectActiveJob(job) {
     }
 
     // Load Cover Letter preferences and values
-    DOM.inputClWords.value = job.targetCoverLetterWordCount || 300;
+    DOM.inputClWords.value = job.targetCoverLetterWordCount || 200;
     DOM.coverLetterOutput.value = job.generatedCoverLetter || '';
     if (job.generatedCoverLetter) {
         DOM.coverLetterOutputWrapper.classList.remove('hidden');
@@ -1302,7 +1302,7 @@ async function selectActiveJob(job) {
     DOM.inputClWords.parentNode.replaceChild(wordsClone, DOM.inputClWords);
     DOM.inputClWords = wordsClone;
     wordsClone.addEventListener('change', async (e) => {
-        job.targetCoverLetterWordCount = parseInt(e.target.value) || 300;
+        job.targetCoverLetterWordCount = parseInt(e.target.value) || 200;
         await updateJob(job.id, job);
     });
 
@@ -1432,7 +1432,7 @@ async function selectActiveJob(job) {
         const title = job.jobTitle || DOM.jobInputTitle.value || 'Untitled Job';
         const company = job.companyName || DOM.jobInputCompany.value || 'Target Company';
         const jdText = job.rawJdText || DOM.jobInputText.value || '';
-        const wordCount = parseInt(DOM.inputClWords.value) || 300;
+        const wordCount = parseInt(DOM.inputClWords.value) || 200;
 
         generateClone.disabled = true;
         generateClone.innerHTML = `<i data-lucide="loader" class="spinner" style="width:14px; height:14px;"></i> Generating cover letter...`;
@@ -2288,7 +2288,7 @@ async function importJobs(file) {
                     missingKeywords: Array.isArray(jobData.missingKeywords) ? jobData.missingKeywords : [],
                     aiSuggestions: Array.isArray(jobData.aiSuggestions) ? jobData.aiSuggestions : [],
                     generatedCoverLetter: jobData.generatedCoverLetter || '',
-                    targetCoverLetterWordCount: typeof jobData.targetCoverLetterWordCount === 'number' ? jobData.targetCoverLetterWordCount : 300
+                    targetCoverLetterWordCount: typeof jobData.targetCoverLetterWordCount === 'number' ? jobData.targetCoverLetterWordCount : 200
                 };
 
                 const newJobId = await addJob(cleanJob);

@@ -140,7 +140,7 @@ def handle_post_job(body: dict = Body(...)):
             json.dumps(body.get('missingKeywords', [])),
             json.dumps(body.get('aiSuggestions', [])),
             body.get('generatedCoverLetter', ''),
-            body.get('targetCoverLetterWordCount', 300)
+            body.get('targetCoverLetterWordCount', 200)
         ))
         new_id = cursor.lastrowid
         conn.commit()
