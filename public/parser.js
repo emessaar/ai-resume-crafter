@@ -251,14 +251,16 @@ export async function analyzeMatchLLM(resumeData, jdText, config) {
     if (config.provider === 'litellm') {
         return await analyzeMatchLiteLLM(resumeData, jdText, config);
     } else {
-        return await analyzeMatchGemini(resumeData, jdText, config.apiKey);
+        return await analyzeMatchGemini(resumeData, jdText, config);
     }
 }
 
 /**
  * Asynchronously call the Gemini API.
  */
-async function analyzeMatchGemini(resumeData, jdText, apiKey) {
+async function analyzeMatchGemini(resumeData, jdText, config) {
+    const apiKey = config.apiKey;
+    const model = config.model || 'gemini-flash-latest';
     if (!apiKey) {
         throw new Error('Missing Gemini API Key.');
     }
@@ -268,7 +270,7 @@ async function analyzeMatchGemini(resumeData, jdText, apiKey) {
 
     const cleanedResume = getCleanedResume(resumeData);
     const prompt = getPromptText(cleanedResume, jdText);
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     const response = await fetch(endpoint, {
         method: 'POST',
@@ -425,10 +427,11 @@ export async function testLLMConnection(config) {
     } else {
         // Gemini
         const apiKey = config.apiKey;
+        const model = config.model || 'gemini-flash-latest';
         if (!apiKey) {
             throw new Error('Missing Gemini API Key.');
         }
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
@@ -525,10 +528,11 @@ You MUST return ONLY the rewritten text segment.
     } else {
         // Gemini
         const apiKey = config.apiKey;
+        const model = config.model || 'gemini-flash-latest';
         if (!apiKey) {
             throw new Error('Missing Gemini API Key.');
         }
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
@@ -628,10 +632,11 @@ Requirements:
     } else {
         // Gemini
         const apiKey = config.apiKey;
+        const model = config.model || 'gemini-flash-latest';
         if (!apiKey) {
             throw new Error('Missing Gemini API Key.');
         }
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {

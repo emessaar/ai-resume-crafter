@@ -47,6 +47,7 @@ let geminiApiKey = '';
 let matcherMode = 'llm';
 let isLlmRunning = false;
 let aiProvider = 'gemini';
+let geminiModelName = 'gemini-flash-latest';
 let litellmBaseUrl = 'http://localhost:4000/v1';
 let litellmModelName = 'ollama/llama3';
 let litellmApiKey = '';
@@ -164,6 +165,7 @@ const DOM = {
     btnTogglePreviewSection: document.getElementById('btn-toggle-preview-section'),
     rightPreviewSection: document.getElementById('right-preview-section'),
     inputGeminiApiKey: document.getElementById('gemini-api-key'),
+    inputGeminiModelName: document.getElementById('gemini-model-name'),
     btnModeLocal: document.getElementById('btn-mode-local'),
     btnModeLlm: document.getElementById('btn-mode-llm'),
     aiModelBadge: document.getElementById('ai-model-badge'),
@@ -358,6 +360,9 @@ async function loadSettings() {
 
     geminiApiKey = await getSetting('gemini_api_key', '');
     DOM.inputGeminiApiKey.value = geminiApiKey;
+
+    geminiModelName = await getSetting('gemini_model_name', 'gemini-flash-latest');
+    DOM.inputGeminiModelName.value = geminiModelName;
 
     aiProvider = await getSetting('ai_provider', 'gemini');
     DOM.selectAiProvider.value = aiProvider;
@@ -1438,7 +1443,7 @@ async function selectActiveJob(job) {
                 provider: aiProvider,
                 apiKey: aiProvider === 'gemini' ? geminiApiKey : litellmApiKey,
                 baseUrl: litellmBaseUrl,
-                model: litellmModelName
+                model: aiProvider === 'gemini' ? geminiModelName : litellmModelName
             };
 
             const result = await generateCoverLetterLLM(activeResume, title, company, jdText, wordCount, config);
@@ -1865,7 +1870,7 @@ async function triggerKeywordAnalysis(forceLlmRun = false) {
             provider: aiProvider,
             apiKey: aiProvider === 'gemini' ? geminiApiKey : litellmApiKey,
             baseUrl: litellmBaseUrl,
-            model: litellmModelName
+            model: aiProvider === 'gemini' ? geminiModelName : litellmModelName
         };
 
         try {
@@ -2508,6 +2513,15 @@ async function setupGeminiApi() {
         triggerKeywordAnalysis();
     });
 
+    // Bind Model Name changes
+    DOM.inputGeminiModelName.addEventListener('change', async (e) => {
+        const val = e.target.value.trim();
+        geminiModelName = val || 'gemini-flash-latest';
+        await saveSetting('gemini_model_name', geminiModelName);
+        updateMatcherModeUI();
+        triggerKeywordAnalysis();
+    });
+
     // Bind Provider Dropdown changes
     DOM.selectAiProvider.addEventListener('change', async (e) => {
         const val = e.target.value;
@@ -2585,6 +2599,7 @@ async function setupGeminiApi() {
                 config.apiKey = DOM.inputLitellmApiKey.value.trim();
             } else {
                 config.apiKey = DOM.inputGeminiApiKey.value.trim();
+                config.model = DOM.inputGeminiModelName.value.trim() || 'gemini-flash-latest';
             }
 
             const response = await testLLMConnection(config);
@@ -2614,7 +2629,7 @@ function updateMatcherModeUI() {
     if (matcherMode === 'llm') {
         DOM.btnModeLocal.classList.remove('active');
         DOM.btnModeLlm.classList.add('active');
-        const modelDisplay = aiProvider === 'litellm' ? litellmModelName : 'gemini-1.5-flash';
+        const modelDisplay = aiProvider === 'litellm' ? litellmModelName : geminiModelName;
         DOM.aiModelBadge.textContent = `(${modelDisplay})`;
         DOM.aiModelBadge.style.display = 'block';
     } else {
@@ -2741,7 +2756,7 @@ function openRewriteModal(textareaElement) {
     document.getElementById('ai-rewrite-instructions').value = '';
     document.getElementById('btn-apply-rewrite').disabled = true;
     
-    const modelDisplay = aiProvider === 'litellm' ? litellmModelName : 'gemini-1.5-flash';
+    const modelDisplay = aiProvider === 'litellm' ? litellmModelName : geminiModelName;
     document.getElementById('ai-rewrite-status').innerHTML = `Optimizing segment using <strong>${aiProvider === 'gemini' ? 'Gemini AI' : 'OpenAI Compatible'}</strong> (${modelDisplay})`;
     
     document.getElementById('ai-rewrite-modal').style.display = 'flex';
@@ -2788,9 +2803,9 @@ function setupRewriteModalListeners() {
         try {
             const config = {
                 provider: aiProvider,
-                apiKey: aiProvider === 'litellm' ? litellmApiKey : geminiApiKey,
+                apiKey: aiProvider === 'gemini' ? geminiApiKey : litellmApiKey,
                 baseUrl: litellmBaseUrl,
-                model: litellmModelName
+                model: aiProvider === 'gemini' ? geminiModelName : litellmModelName
             };
 
             const result = await rewriteTextLLM(text, instructions, activeJd, config);

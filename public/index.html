@@ -620,8 +620,16 @@
 
                             <!-- GEMINI CONFIGS -->
                             <div class="form-group col-span-2 ai-config-section" id="section-config-gemini">
-                                <label for="gemini-api-key">Gemini API Key</label>
-                                <input type="password" id="gemini-api-key" placeholder="Enter your AIzaSy... API Key" class="form-input">
+                                <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); width: 100%; gap: 1rem; margin-bottom: 0.5rem;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="gemini-api-key">Gemini API Key</label>
+                                        <input type="password" id="gemini-api-key" placeholder="Enter your AIzaSy... API Key" class="form-input">
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="gemini-model-name">Model Name</label>
+                                        <input type="text" id="gemini-model-name" placeholder="gemini-flash-latest" class="form-input">
+                                    </div>
+                                </div>
                                 <p class="help-text">Your API Key is stored locally and sent directly to Google's endpoints. Get a key from <a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a>.</p>
                             </div>
 
