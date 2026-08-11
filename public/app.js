@@ -1361,22 +1361,31 @@ async function selectActiveJob(job) {
         const linkedin = activeResume?.personalInfo?.linkedin || '';
 
         const coverLetterHtml = `
-            <div class="cover-letter-print-container" style="padding: var(--style-margin, 0.75in); min-height: 100%; box-sizing: border-box; background: white; text-align: left; font-family: var(--style-font, 'Inter', sans-serif); color: var(--style-color-text, #1f2937); font-size: var(--style-fontsize, 11pt); line-height: var(--style-lineheight, 1.4);">
+            <div class="cover-letter-print-container" style="padding: var(--style-margin, 0.75in); min-height: 100%; box-sizing: border-box; background: white; text-align: left; font-family: var(--style-font, 'Inter', sans-serif); color: #000000; font-size: var(--style-fontsize, 11pt); line-height: var(--style-lineheight, 1.4);">
+                <style>
+                    .cl-markdown-content p {
+                        margin-top: 0;
+                        margin-bottom: 1.5rem;
+                    }
+                    .cl-markdown-content p:last-child {
+                        margin-bottom: 0;
+                    }
+                </style>
                 <!-- Header block matching resume template typography & accent colors -->
-                <div class="cover-letter-header" style="text-align: center; margin-bottom: 2.5rem; border-bottom: 2px solid var(--style-color-primary, #374151); padding-bottom: 1.5rem;">
-                    <h1 style="font-size: 2.25rem; font-weight: 700; margin: 0 0 0.5rem 0; font-family: 'Outfit', sans-serif; color: var(--style-color-primary, #374151);">${name}</h1>
-                    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.85rem; color: #4b5563;">
-                        ${email ? `<span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="mail" style="width:12px;height:12px;"></i>${email}</span>` : ''}
-                        ${phone ? `<span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="phone" style="width:12px;height:12px;"></i>${phone}</span>` : ''}
-                        ${loc ? `<span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="map-pin" style="width:12px;height:12px;"></i>${loc}</span>` : ''}
-                        ${web ? `<span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="globe" style="width:12px;height:12px;"></i>${web}</span>` : ''}
-                        ${linkedin ? `<span style="display:inline-flex; align-items:center; gap:4px;"><i data-lucide="linkedin" style="width:12px;height:12px;"></i>${linkedin}</span>` : ''}
+                <div class="cover-letter-header" style="text-align: center; margin-bottom: 2.5rem; border-bottom: 2px solid #000000; padding-bottom: 1.5rem;">
+                    <h1 style="font-size: 2.25rem; font-weight: 700; margin: 0 0 0.5rem 0; font-family: 'Outfit', sans-serif; color: #000000;">${name}</h1>
+                    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.85rem; color: #000000;">
+                        ${email ? `<span style="display:inline-flex; align-items:center; gap:4px;">✉ ${email}</span>` : ''}
+                        ${phone ? `<span style="display:inline-flex; align-items:center; gap:4px;">✆ ${phone}</span>` : ''}
+                        ${loc ? `<span style="display:inline-flex; align-items:center; gap:4px;">⚲ ${loc}</span>` : ''}
+                        ${web ? `<span style="display:inline-flex; align-items:center; gap:4px;"><span class="icon-txt">🔗</span> ${web}</span>` : ''}
+                        ${linkedin ? `<span style="display:inline-flex; align-items:center; gap:4px;"><span class="icon-txt">[in]</span> ${linkedin}</span>` : ''}
                     </div>
                 </div>
                 
                 <!-- Date & Body -->
                 <div class="cover-letter-body">
-                    <div style="margin-bottom: 1.5rem; font-weight: 500; color: #4b5563;">
+                    <div style="margin-bottom: 1.5rem; font-weight: 500; color: #000000;">
                         ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </div>
                     <div class="cl-markdown-content">

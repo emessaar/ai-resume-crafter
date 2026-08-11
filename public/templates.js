@@ -9,9 +9,9 @@ export const BUILTIN_TEMPLATES = {
         cssClass: 'template-modern',
         layout: 'single-column',
         defaults: {
-            primaryColor: '#111827',
-            secondaryColor: '#374151',
-            textColor: '#4b5563',
+            primaryColor: '#000000',
+            secondaryColor: '#000000',
+            textColor: '#000000',
             backgroundColor: '#ffffff',
             fontFamily: 'Inter, sans-serif',
             fontSize: '11pt',
@@ -25,9 +25,9 @@ export const BUILTIN_TEMPLATES = {
         cssClass: 'template-minimal',
         layout: 'single-column',
         defaults: {
-            primaryColor: '#1f2937',
-            secondaryColor: '#4b5563',
-            textColor: '#525252',
+            primaryColor: '#000000',
+            secondaryColor: '#000000',
+            textColor: '#000000',
             backgroundColor: '#ffffff',
             fontFamily: 'system-ui, sans-serif',
             fontSize: '10.5pt',
@@ -41,9 +41,9 @@ export const BUILTIN_TEMPLATES = {
         cssClass: 'template-split',
         layout: 'split',
         defaults: {
-            primaryColor: '#111827',
-            secondaryColor: '#374151',
-            textColor: '#4b5563',
+            primaryColor: '#000000',
+            secondaryColor: '#000000',
+            textColor: '#000000',
             backgroundColor: '#ffffff',
             fontFamily: "'Outfit', sans-serif",
             fontSize: '11pt',
@@ -54,13 +54,26 @@ export const BUILTIN_TEMPLATES = {
 };
 
 /**
+ * Escape HTML characters to prevent XSS injection and layout breakage.
+ */
+export function escapeHtml(str) {
+    if (typeof str !== 'string') return str || '';
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+/**
  * Apply template visual style custom properties to the preview sheet DOM element.
  */
 export function applyStyleVariables(element, styles) {
     if (!element) return;
-    element.style.setProperty('--preview-primary-color', styles.primaryColor || '#111827');
-    element.style.setProperty('--preview-secondary-color', styles.secondaryColor || '#374151');
-    element.style.setProperty('--preview-text-color', styles.textColor || '#4b5563');
+    element.style.setProperty('--preview-primary-color', '#000000');
+    element.style.setProperty('--preview-secondary-color', '#000000');
+    element.style.setProperty('--preview-text-color', '#000000');
     element.style.setProperty('--preview-bg-color', styles.backgroundColor || '#ffffff');
     element.style.setProperty('--preview-font-family', styles.fontFamily || 'Inter, sans-serif');
     element.style.setProperty('--preview-font-size', styles.fontSize || '11pt');
@@ -72,7 +85,53 @@ export function applyStyleVariables(element, styles) {
  * Compile resume data into raw HTML based on layout templates and section ordering.
  */
 export function compileResumeHtml(resumeData, templateId, sectionOrder = ['summary', 'experience', 'projects', 'education', 'skills', 'certifications']) {
-    const { personalInfo, experience = [], education = [], skills = [], projects = [], certifications = [] } = resumeData;
+    const cleanStr = (s) => escapeHtml(s);
+    
+    const personalInfo = {
+        fullName: cleanStr(resumeData.personalInfo?.fullName),
+        email: cleanStr(resumeData.personalInfo?.email),
+        phone: cleanStr(resumeData.personalInfo?.phone),
+        location: cleanStr(resumeData.personalInfo?.location),
+        website: cleanStr(resumeData.personalInfo?.website),
+        linkedin: cleanStr(resumeData.personalInfo?.linkedin),
+        github: cleanStr(resumeData.personalInfo?.github),
+        customSubline: cleanStr(resumeData.personalInfo?.customSubline),
+        summary: cleanStr(resumeData.personalInfo?.summary)
+    };
+
+    const experience = (resumeData.experience || []).map(exp => ({
+        company: cleanStr(exp.company),
+        location: cleanStr(exp.location),
+        position: cleanStr(exp.position),
+        startDate: cleanStr(exp.startDate),
+        endDate: cleanStr(exp.endDate),
+        current: exp.current,
+        description: exp.description
+    }));
+
+    const education = (resumeData.education || []).map(edu => ({
+        school: cleanStr(edu.school),
+        location: cleanStr(edu.location),
+        degree: cleanStr(edu.degree),
+        fieldOfStudy: cleanStr(edu.fieldOfStudy),
+        startDate: cleanStr(edu.startDate),
+        endDate: cleanStr(edu.endDate),
+        description: cleanStr(edu.description)
+    }));
+
+    const projects = (resumeData.projects || []).map(proj => ({
+        name: cleanStr(proj.name),
+        link: cleanStr(proj.link),
+        role: cleanStr(proj.role),
+        startDate: cleanStr(proj.startDate),
+        endDate: cleanStr(proj.endDate),
+        description: proj.description,
+        technologies: (proj.technologies || []).map(t => cleanStr(t))
+    }));
+
+    const skills = (resumeData.skills || []).map(s => cleanStr(s));
+    const certifications = (resumeData.certifications || []).map(c => cleanStr(c));
+
     const template = BUILTIN_TEMPLATES[templateId] || BUILTIN_TEMPLATES.modern;
 
     // Helper: format dates nicely
@@ -107,12 +166,12 @@ export function compileResumeHtml(resumeData, templateId, sectionOrder = ['summa
         <div class="resume-preview-header">
             <h1>${personalInfo.fullName || 'Your Name'}</h1>
             <div class="resume-preview-contacts">
-                ${personalInfo.email ? `<span><i data-lucide="mail" style="width:12px;height:12px;"></i> ${personalInfo.email}</span>` : ''}
-                ${personalInfo.phone ? `<span><i data-lucide="phone" style="width:12px;height:12px;"></i> ${personalInfo.phone}</span>` : ''}
-                ${personalInfo.location ? `<span><i data-lucide="map-pin" style="width:12px;height:12px;"></i> ${personalInfo.location}</span>` : ''}
-                ${personalInfo.website ? `<span><i data-lucide="globe" style="width:12px;height:12px;"></i> <a href="${personalInfo.website}" target="_blank">${personalInfo.website.replace(/^https?:\/\//, '')}</a></span>` : ''}
-                ${personalInfo.linkedin ? `<span><i data-lucide="linkedin" style="width:12px;height:12px;"></i> <a href="${personalInfo.linkedin}" target="_blank">LinkedIn</a></span>` : ''}
-                ${personalInfo.github ? `<span><i data-lucide="github" style="width:12px;height:12px;"></i> <a href="${personalInfo.github}" target="_blank">GitHub</a></span>` : ''}
+                ${personalInfo.email ? `<span>✉ ${personalInfo.email}</span>` : ''}
+                ${personalInfo.phone ? `<span>✆ ${personalInfo.phone}</span>` : ''}
+                ${personalInfo.location ? `<span>⚲ ${personalInfo.location}</span>` : ''}
+                ${personalInfo.website ? `<span><span class="icon-txt">🔗</span> <a href="${personalInfo.website}" target="_blank">${personalInfo.website.replace(/^https?:\/\//, '')}</a></span>` : ''}
+                ${personalInfo.linkedin ? `<span><span class="icon-txt">[in]</span> <a href="${personalInfo.linkedin}" target="_blank">LinkedIn</a></span>` : ''}
+                ${personalInfo.github ? `<span><span class="icon-txt">&lt;/&gt;</span> <a href="${personalInfo.github}" target="_blank">GitHub</a></span>` : ''}
             </div>
             ${personalInfo.customSubline ? `
             <div class="resume-preview-custom-subline" style="margin-top: 0.5rem; font-size: 9.5pt; text-align: center; color: var(--preview-text-color); font-weight: 500;">
@@ -192,7 +251,7 @@ export function compileResumeHtml(resumeData, templateId, sectionOrder = ['summa
                             <div class="resume-preview-item">
                                 <div class="resume-preview-item-header">
                                     <span class="resume-preview-item-company">${proj.name}</span>
-                                    <span>${proj.link ? `<a href="${proj.link}" target="_blank" style="font-size: 9pt; font-weight: normal;"><i data-lucide="link" style="width:10px;height:10px;vertical-align:middle;"></i> Project Link</a>` : ''}</span>
+                                    <span>${proj.link ? `<a href="${proj.link}" target="_blank" style="font-size: 9pt; font-weight: normal;"><span class="icon-txt">🔗</span> Project Link</a>` : ''}</span>
                                 </div>
                                 <div class="resume-preview-item-sub">
                                     <span>${proj.role || 'Contributor'}</span>
@@ -200,7 +259,7 @@ export function compileResumeHtml(resumeData, templateId, sectionOrder = ['summa
                                 </div>
                                 <div class="resume-preview-item-desc">
                                     ${window.marked ? window.marked.parse(proj.description || '') : proj.description}
-                                    ${proj.technologies && proj.technologies.length > 0 ? `<div style="margin-top:0.25rem;font-size:9pt;color:#555555;"><strong>Tech Stack:</strong> ${proj.technologies.join(', ')}</div>` : ''}
+                                    ${proj.technologies && proj.technologies.length > 0 ? `<div style="margin-top:0.25rem;font-size:9pt;color:#000000;"><strong>Tech Stack:</strong> ${proj.technologies.join(', ')}</div>` : ''}
                                 </div>
                             </div>
                         `).join('')}
@@ -243,12 +302,12 @@ export function compileResumeHtml(resumeData, templateId, sectionOrder = ['summa
                 <div class="resume-preview-header" style="text-align: left; border-bottom: none; margin-bottom: 1.5rem;">
                     <h1 style="font-size: 18pt; line-height: 1.2;">${personalInfo.fullName || 'Your Name'}</h1>
                     <div class="resume-preview-contacts" style="flex-direction: column; align-items: flex-start; gap: 0.5rem; margin-top: 1rem; font-size: 8.5pt;">
-                        ${personalInfo.email ? `<span><i data-lucide="mail" style="width:10px;height:10px;"></i> ${personalInfo.email}</span>` : ''}
-                        ${personalInfo.phone ? `<span><i data-lucide="phone" style="width:10px;height:10px;"></i> ${personalInfo.phone}</span>` : ''}
-                        ${personalInfo.location ? `<span><i data-lucide="map-pin" style="width:10px;height:10px;"></i> ${personalInfo.location}</span>` : ''}
-                        ${personalInfo.website ? `<span><i data-lucide="globe" style="width:10px;height:10px;"></i> <a href="${personalInfo.website}" target="_blank">Website</a></span>` : ''}
-                        ${personalInfo.linkedin ? `<span><i data-lucide="linkedin" style="width:10px;height:10px;"></i> <a href="${personalInfo.linkedin}" target="_blank">LinkedIn</a></span>` : ''}
-                        ${personalInfo.github ? `<span><i data-lucide="github" style="width:10px;height:10px;"></i> <a href="${personalInfo.github}" target="_blank">GitHub</a></span>` : ''}
+                        ${personalInfo.email ? `<span>✉ ${personalInfo.email}</span>` : ''}
+                        ${personalInfo.phone ? `<span>✆ ${personalInfo.phone}</span>` : ''}
+                        ${personalInfo.location ? `<span>⚲ ${personalInfo.location}</span>` : ''}
+                        ${personalInfo.website ? `<span><span class="icon-txt">🔗</span> <a href="${personalInfo.website}" target="_blank">Website</a></span>` : ''}
+                        ${personalInfo.linkedin ? `<span><span class="icon-txt">[in]</span> <a href="${personalInfo.linkedin}" target="_blank">LinkedIn</a></span>` : ''}
+                        ${personalInfo.github ? `<span><span class="icon-txt">&lt;/&gt;</span> <a href="${personalInfo.github}" target="_blank">GitHub</a></span>` : ''}
                     </div>
                     ${personalInfo.customSubline ? `
                     <div class="resume-preview-custom-subline" style="margin-top: 0.5rem; font-size: 8.5pt; color: var(--preview-text-color); font-weight: 500; text-align: left;">
@@ -277,7 +336,52 @@ export function compileResumeHtml(resumeData, templateId, sectionOrder = ['summa
  * and strips/replaces SVG icons with Google-doc-compatible Unicode characters.
  */
 export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['summary', 'experience', 'projects', 'education', 'skills', 'certifications'], styles = {}) {
-    const { personalInfo, experience = [], education = [], skills = [], projects = [], certifications = [] } = resumeData;
+    const cleanStr = (s) => escapeHtml(s);
+    
+    const personalInfo = {
+        fullName: cleanStr(resumeData.personalInfo?.fullName),
+        email: cleanStr(resumeData.personalInfo?.email),
+        phone: cleanStr(resumeData.personalInfo?.phone),
+        location: cleanStr(resumeData.personalInfo?.location),
+        website: cleanStr(resumeData.personalInfo?.website),
+        linkedin: cleanStr(resumeData.personalInfo?.linkedin),
+        github: cleanStr(resumeData.personalInfo?.github),
+        customSubline: cleanStr(resumeData.personalInfo?.customSubline),
+        summary: cleanStr(resumeData.personalInfo?.summary)
+    };
+
+    const experience = (resumeData.experience || []).map(exp => ({
+        company: cleanStr(exp.company),
+        location: cleanStr(exp.location),
+        position: cleanStr(exp.position),
+        startDate: cleanStr(exp.startDate),
+        endDate: cleanStr(exp.endDate),
+        current: exp.current,
+        description: exp.description
+    }));
+
+    const education = (resumeData.education || []).map(edu => ({
+        school: cleanStr(edu.school),
+        location: cleanStr(edu.location),
+        degree: cleanStr(edu.degree),
+        fieldOfStudy: cleanStr(edu.fieldOfStudy),
+        startDate: cleanStr(edu.startDate),
+        endDate: cleanStr(edu.endDate),
+        description: cleanStr(edu.description)
+    }));
+
+    const projects = (resumeData.projects || []).map(proj => ({
+        name: cleanStr(proj.name),
+        link: cleanStr(proj.link),
+        role: cleanStr(proj.role),
+        startDate: cleanStr(proj.startDate),
+        endDate: cleanStr(proj.endDate),
+        description: proj.description,
+        technologies: (proj.technologies || []).map(t => cleanStr(t))
+    }));
+
+    const skills = (resumeData.skills || []).map(s => cleanStr(s));
+    const certifications = (resumeData.certifications || []).map(c => cleanStr(c));
 
     // Helper: format dates nicely
     const formatDate = (dateStr) => {
@@ -306,9 +410,9 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
         return '';
     };
 
-    const primaryColor = styles.primaryColor || '#111827';
-    const secondaryColor = styles.secondaryColor || '#374151';
-    const textColor = styles.textColor || '#4b5563';
+    const primaryColor = '#000000';
+    const secondaryColor = '#000000';
+    const textColor = '#000000';
     const backgroundColor = styles.backgroundColor || '#ffffff';
     const fontFamily = styles.fontFamily || 'Inter, sans-serif';
     const fontSize = styles.fontSize || '11pt';
@@ -344,11 +448,11 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
     const renderHeader = () => {
         const contactItems = [
             personalInfo.email ? `✉ ${personalInfo.email}` : null,
-            personalInfo.phone ? `📞 ${personalInfo.phone}` : null,
-            personalInfo.location ? `📍 ${personalInfo.location}` : null,
-            personalInfo.website ? `🌐 <a href="${personalInfo.website}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none; font-family: ${fontFamily}; font-size: 9.5pt;">${personalInfo.website.replace(/^https?:\/\//, '')}</span></a>` : null,
-            personalInfo.linkedin ? `🔗 <a href="${personalInfo.linkedin}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none; font-family: ${fontFamily}; font-size: 9.5pt;">LinkedIn</span></a>` : null,
-            personalInfo.github ? `💻 <a href="${personalInfo.github}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none; font-family: ${fontFamily}; font-size: 9.5pt;">GitHub</span></a>` : null
+            personalInfo.phone ? `✆ ${personalInfo.phone}` : null,
+            personalInfo.location ? `⚲ ${personalInfo.location}` : null,
+            personalInfo.website ? `<span style="font-size: 7.5pt; font-weight: bold; vertical-align: middle;">🔗</span> <a href="${personalInfo.website}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none; font-family: ${fontFamily}; font-size: 9.5pt;">${personalInfo.website.replace(/^https?:\/\//, '')}</span></a>` : null,
+            personalInfo.linkedin ? `<span style="font-size: 7.5pt; font-weight: bold; vertical-align: middle;">[in]</span> <a href="${personalInfo.linkedin}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none; font-family: ${fontFamily}; font-size: 9.5pt;">LinkedIn</span></a>` : null,
+            personalInfo.github ? `<span style="font-size: 7.5pt; font-weight: bold; vertical-align: middle;">&lt;/&gt;</span> <a href="${personalInfo.github}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none; font-family: ${fontFamily}; font-size: 9.5pt;">GitHub</span></a>` : null
         ].filter(Boolean);
 
         return `
@@ -467,7 +571,7 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
                                     <tr>
                                         <td style="text-align: left; padding: 0;"><span style="color: ${secondaryColor}; font-size: 11.5pt; font-weight: bold; font-family: ${fontFamily};">${proj.name}</span></td>
                                         <td style="text-align: right; padding: 0;">
-                                            ${proj.link ? `<a href="${proj.link}" style="color: ${secondaryColor}; text-decoration: none;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${secondaryColor};">🔗 Project Link</span></a>` : ''}
+                                            ${proj.link ? `<a href="${proj.link}" style="color: ${secondaryColor}; text-decoration: none;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${secondaryColor};"><span class="icon-txt" style="font-size: 7.5pt; font-weight: bold; vertical-align: middle;">🔗</span> Project Link</span></a>` : ''}
                                         </td>
                                     </tr>
                                 </table>
@@ -479,7 +583,7 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
                                 </table>
                                 <div class="resume-preview-item-desc" style="font-size: 10pt; line-height: ${lineHeight}; color: ${textColor}; font-family: ${fontFamily};">
                                     ${parseMarkdown(proj.description || '')}
-                                    ${proj.technologies && proj.technologies.length > 0 ? `<p style="margin: 0.25rem 0 0 0;"><span style="font-size: 9pt; color: #555555; font-family: ${fontFamily};"><strong>Tech Stack:</strong> ${proj.technologies.join(', ')}</span></p>` : ''}
+                                    ${proj.technologies && proj.technologies.length > 0 ? `<p style="margin: 0.25rem 0 0 0;"><span style="font-size: 9pt; color: #000000; font-family: ${fontFamily};"><strong>Tech Stack:</strong> ${proj.technologies.join(', ')}</span></p>` : ''}
                                 </div>
                             </div>
                         `).join('')}
@@ -529,11 +633,11 @@ export function compileGoogleDocHtml(resumeData, templateId, sectionOrder = ['su
                             </h1>
                             <div class="resume-preview-contacts" style="margin-bottom: 1rem;">
                                 ${personalInfo.email ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};">✉ ${personalInfo.email}</span></p>` : ''}
-                                ${personalInfo.phone ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};">📞 ${personalInfo.phone}</span></p>` : ''}
-                                ${personalInfo.location ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};">📍 ${personalInfo.location}</span></p>` : ''}
-                                ${personalInfo.website ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};">🌐 <a href="${personalInfo.website}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none;">Website</span></a></span></p>` : ''}
-                                ${personalInfo.linkedin ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};">🔗 <a href="${personalInfo.linkedin}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none;">LinkedIn</span></a></span></p>` : ''}
-                                ${personalInfo.github ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};">💻 <a href="${personalInfo.github}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none;">GitHub</span></a></span></p>` : ''}
+                                ${personalInfo.phone ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};">✆ ${personalInfo.phone}</span></p>` : ''}
+                                ${personalInfo.location ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};">⚲ ${personalInfo.location}</span></p>` : ''}
+                                ${personalInfo.website ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};"><span style="font-size: 7.5pt; font-weight: bold; vertical-align: middle;">🔗</span> <a href="${personalInfo.website}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none;">Website</span></a></span></p>` : ''}
+                                ${personalInfo.linkedin ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};"><span style="font-size: 7.5pt; font-weight: bold; vertical-align: middle;">[in]</span> <a href="${personalInfo.linkedin}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none;">LinkedIn</span></a></span></p>` : ''}
+                                ${personalInfo.github ? `<p style="margin: 0 0 0.25rem 0; line-height: 1.4;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor};"><span style="font-size: 7.5pt; font-weight: bold; vertical-align: middle;">&lt;/&gt;</span> <a href="${personalInfo.github}" style="color: ${secondaryColor}; text-decoration: none;"><span style="color: ${secondaryColor}; text-decoration: none;">GitHub</span></a></span></p>` : ''}
                             </div>
                             ${personalInfo.customSubline ? `<p style="margin: 0.5rem 0 0.25rem 0; line-height: 1.4; font-weight: bold;"><span style="font-size: 9pt; font-family: ${fontFamily}; color: ${textColor}; font-weight: bold;">${personalInfo.customSubline}</span></p>` : ''}
                         </div>

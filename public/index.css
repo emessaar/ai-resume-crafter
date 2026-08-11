@@ -1106,13 +1106,18 @@ a:hover {
     justify-content: center;
     gap: 0.75rem;
     font-size: 9.5pt;
-    color: var(--ui-text-muted);
+    color: var(--preview-text-color);
 }
 .resume-preview-contacts span {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    color: #475569;
+    color: var(--preview-text-color);
+}
+.icon-txt {
+    font-size: 7.5pt;
+    font-weight: 700;
+    vertical-align: middle;
 }
 
 .resume-preview-section {
@@ -1148,7 +1153,7 @@ a:hover {
     justify-content: space-between;
     align-items: baseline;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--preview-primary-color);
     font-size: 10.5pt;
     margin-bottom: 0.15rem;
 }
@@ -1160,7 +1165,7 @@ a:hover {
 }
 .resume-preview-item-location {
     font-weight: 400;
-    color: #64748b;
+    color: var(--preview-text-color);
     font-size: 9.5pt;
 }
 
@@ -1169,7 +1174,7 @@ a:hover {
     justify-content: space-between;
     font-size: 9.5pt;
     font-style: italic;
-    color: #475569;
+    color: var(--preview-text-color);
     margin-bottom: 0.35rem;
 }
 
@@ -1486,6 +1491,10 @@ a:hover {
         overflow: visible !important;
         transform: none !important;
         transition: none !important;
+    }
+
+    .cover-letter-print-container {
+        padding: 0 !important;
     }
 
     /* @page margin is applied by the browser on EVERY printed page, including
